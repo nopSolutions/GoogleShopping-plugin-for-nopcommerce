@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -15,6 +15,7 @@ using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Security;
 using Nop.Core.Domain.Stores;
+using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
 using Nop.Plugin.Feed.GoogleShopping.Data;
 using Nop.Plugin.Feed.GoogleShopping.Services;
@@ -25,7 +26,9 @@ using Nop.Services.Directory;
 using Nop.Services.Localization;
 using Nop.Services.Media;
 using Nop.Services.Seo;
+using Nop.Services.Stores;
 using Nop.Services.Tax;
+using Nop.Web.Framework.Localization;
 
 namespace Nop.Plugin.Feed.GoogleShopping
 {
@@ -54,7 +57,8 @@ namespace Nop.Plugin.Feed.GoogleShopping
         private readonly IHostingEnvironment _hostingEnvironment;
         private readonly IUrlHelperFactory _urlHelperFactory;
         private readonly IActionContextAccessor _actionContextAccessor;
-
+        private readonly IStoreService _storeService;
+        private readonly IStoreContext _storeContext;
         #endregion
 
         #region Ctor
@@ -79,7 +83,10 @@ namespace Nop.Plugin.Feed.GoogleShopping
             IWebHelper webHelper,
             IHostingEnvironment hostingEnvironment,
             IUrlHelperFactory urlHelperFactory,
-            IActionContextAccessor actionContextAccessor)
+            IActionContextAccessor actionContextAccessor,
+            IStoreService storeService,
+            IStoreContext storeContext
+            )
         {
             this._googleService = googleService;
             this._priceCalculationService = priceCalculationService;
@@ -102,6 +109,8 @@ namespace Nop.Plugin.Feed.GoogleShopping
             this._hostingEnvironment = hostingEnvironment;
             this._urlHelperFactory = urlHelperFactory;
             this._actionContextAccessor = actionContextAccessor;
+            this._storeService = storeService;
+            this._storeContext = storeContext;
         }
 
         #endregion
@@ -189,7 +198,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
         /// <param name="stream">Stream</param>
         /// <param name="store">Store</param>
         /// <returns>Generated feed</returns>
-        public void GenerateFeed(Stream stream, Store store)
+        public void GenerateFeed(Stream stream, Store store, IList<int> selectedCategoryIds)
         {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
@@ -234,22 +243,22 @@ namespace Nop.Plugin.Feed.GoogleShopping
                 writer.WriteElementString("description", "Information about products");
 
 
-                var products1 = _productService.SearchProducts(storeId: store.Id, visibleIndividuallyOnly: true);
-                foreach (var product1 in products1)
+                var productsWithSelectedCats = _productService.SearchProducts(storeId: store.Id, visibleIndividuallyOnly: true, categoryIds: selectedCategoryIds);
+                foreach (var productWithSelectedCats in productsWithSelectedCats)
                 {
                     var productsToProcess = new List<Product>();
-                    switch (product1.ProductType)
+                    switch (productWithSelectedCats.ProductType)
                     {
                         case ProductType.SimpleProduct:
                             {
                                 //simple product doesn't have child products
-                                productsToProcess.Add(product1);
+                                productsToProcess.Add(productWithSelectedCats);
                             }
                             break;
                         case ProductType.GroupedProduct:
                             {
                                 //grouped products could have several child products
-                                var associatedProducts = _productService.GetAssociatedProducts(product1.Id, store.Id);
+                                var associatedProducts = _productService.GetAssociatedProducts(productWithSelectedCats.Id, store.Id);
                                 productsToProcess.AddRange(associatedProducts);
                             }
                             break;
@@ -321,7 +330,9 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         }
 
                         //link [link] - URL directly linking to your item's page on your website
-                        var productUrl = GetUrlHelper().RouteUrl("Product", new { SeName = product.GetSeName(languageId) }, GetHttpProtocol());
+                        var productUrl = GetStoreUrl(store) + GetUrlHelper().RouteUrl("Product", new { SeName = product.GetSeName(languageId) }).AddLanguageSeoCodeToUrl(this._actionContextAccessor.ActionContext.HttpContext.Request.PathBase, true, _workContext.WorkingLanguage);
+
+
                         writer.WriteElementString("link", productUrl);
 
                         //image link [image_link] - URL of an image of the item
@@ -572,6 +583,37 @@ namespace Nop.Plugin.Feed.GoogleShopping
         }
 
         /// <summary>
+        /// Get store URL
+        /// </summary>
+        /// <param name="storeId">Store identifier; Pass 0 to load URL of the current store</param>
+        /// <param name="removeTailingSlash">A value indicating whether to remove a tailing slash</param>
+        /// <returns>Store URL</returns>
+        protected virtual string GetStoreUrl(Store store)
+        {
+            var storeLocation = _securitySettings.ForceSslForAllPages ?
+    (!string.IsNullOrWhiteSpace(store.SecureUrl) ? store.SecureUrl : store.Url.Replace("http://", "https://")) :
+    store.Url;
+
+            if (storeLocation.EndsWith("/"))
+                storeLocation = storeLocation.Remove(storeLocation.Length - 1);
+
+            return storeLocation;
+            //var store = _storeService.GetStoreById(storeId) ?? _storeContext.CurrentStore;
+
+            //if (store == null)
+            //    throw new Exception("No store could be loaded");
+
+            //var url = store.Url;
+            //if (string.IsNullOrEmpty(url))
+            //    throw new Exception("URL cannot be null");
+
+            //if (url.EndsWith("/"))
+            //    url = url.Remove(url.Length - 1);
+
+            //return url;
+        }
+
+        /// <summary>
         /// Install plugin
         /// </summary>
         public override void Install()
@@ -674,14 +716,14 @@ namespace Nop.Plugin.Feed.GoogleShopping
         /// Generate a static feed file
         /// </summary>
         /// <param name="store">Store</param>
-        public virtual void GenerateStaticFile(Store store)
+        public virtual void GenerateStaticFile(Store store, IList<int> selectedCategoryIds)
         {
             if (store == null)
                 throw new ArgumentNullException(nameof(store));
             string filePath = Path.Combine(_hostingEnvironment.WebRootPath, "files\\exportimport", store.Id + "-" + _googleShoppingSettings.StaticFileName);
             using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
             {
-                GenerateFeed(fs, store);
+                GenerateFeed(fs, store, selectedCategoryIds);
             }
         }
 
