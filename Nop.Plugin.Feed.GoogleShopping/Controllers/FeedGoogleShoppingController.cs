@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Hosting;
@@ -22,6 +22,9 @@ using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Kendoui;
 using Nop.Web.Framework.Mvc;
 using Nop.Web.Framework.Mvc.Filters;
+using Nop.Web.Areas.Admin.Helpers;
+using Nop.Core.Infrastructure;
+using Nop.Core.Caching;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Controllers
 {
@@ -94,6 +97,17 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
             foreach (var gc in _googleService.GetTaxonomyList())
                 model.AvailableGoogleCategories.Add(new SelectListItem { Text = gc, Value = gc });
 
+            model.SelectedCategoryIds = !string.IsNullOrEmpty(_googleShoppingSettings.SelectedCategoryIds) && _googleShoppingSettings.SelectedCategoryIds.Split(',').Count() > 0 ? _googleShoppingSettings.SelectedCategoryIds.Split(',').Select(c => int.Parse(c)).ToList() : new List<int>();
+
+            var categoryService = EngineContext.Current.Resolve<ICategoryService>();
+            var cacheManager = EngineContext.Current.Resolve<ICacheManager>();
+            var allCategories = SelectListHelper.GetCategoryList(categoryService, cacheManager, true);
+            foreach (var c in allCategories)
+            {
+                c.Selected = model.SelectedCategoryIds.Contains(int.Parse(c.Value));
+                model.AvailableCategories.Add(c);
+            }
+
             //file paths
             foreach (var store in _storeService.GetAllStores())
             {
@@ -129,6 +143,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
             _googleShoppingSettings.CurrencyId = model.CurrencyId;
             _googleShoppingSettings.StoreId = model.StoreId;
             _googleShoppingSettings.DefaultGoogleCategory = model.DefaultGoogleCategory;
+            _googleShoppingSettings.SelectedCategoryIds = string.Join(",", model.SelectedCategoryIds);
             _settingService.SaveSetting(_googleShoppingSettings);
 
             SuccessNotification(_localizationService.GetResource("Admin.Plugins.Saved"));
@@ -163,7 +178,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
                     stores.AddRange(_storeService.GetAllStores());
 
                 foreach (var store in stores)
-                    plugin.GenerateStaticFile(store);
+                    plugin.GenerateStaticFile(store, model.SelectedCategoryIds);
 
                 SuccessNotification(_localizationService.GetResource("Plugins.Feed.GoogleShopping.SuccessResult"));
             }
