@@ -1,4 +1,4 @@
-﻿using Nop.Core.Configuration;
+using Nop.Core.Configuration;
 
 namespace Nop.Plugin.Feed.GoogleShopping
 {
@@ -47,5 +47,8 @@ namespace Nop.Plugin.Feed.GoogleShopping
         /// Number of days for expiration date
         /// </summary>
         public int ExpirationNumberOfDays { get; set; }
+
+
+        public string SelectedCategoryIds { get; set; }
     }
 }
