@@ -42,6 +42,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
         private readonly IPictureService _pictureService;
         private readonly ICurrencyService _currencyService;
         private readonly ILanguageService _languageService;
+        private readonly ILocalizationService _localizationService;
         private readonly ISettingService _settingService;
         private readonly IWorkContext _workContext;
         private readonly IMeasureService _measureService;
@@ -53,6 +54,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
         private readonly IWebHelper _webHelper;
         private readonly IHostingEnvironment _hostingEnvironment;
         private readonly IUrlHelperFactory _urlHelperFactory;
+        private readonly IUrlRecordService _urlRecordService;
         private readonly IActionContextAccessor _actionContextAccessor;
 
         #endregion
@@ -68,6 +70,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
             IPictureService pictureService,
             ICurrencyService currencyService,
             ILanguageService languageService,
+            ILocalizationService localizationService,
             ISettingService settingService,
             IWorkContext workContext,
             IMeasureService measureService,
@@ -79,6 +82,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
             IWebHelper webHelper,
             IHostingEnvironment hostingEnvironment,
             IUrlHelperFactory urlHelperFactory,
+            IUrlRecordService urlRecordService,
             IActionContextAccessor actionContextAccessor)
         {
             this._googleService = googleService;
@@ -90,6 +94,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
             this._pictureService = pictureService;
             this._currencyService = currencyService;
             this._languageService = languageService;
+            this._localizationService = localizationService;
             this._settingService = settingService;
             this._workContext = workContext;
             this._measureService = measureService;
@@ -101,6 +106,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
             this._webHelper = webHelper;
             this._hostingEnvironment = hostingEnvironment;
             this._urlHelperFactory = urlHelperFactory;
+            this._urlRecordService = urlRecordService;
             this._actionContextAccessor = actionContextAccessor;
         }
 
@@ -233,7 +239,6 @@ namespace Nop.Plugin.Feed.GoogleShopping
                 writer.WriteElementString("link", "http://base.google.com/base/");
                 writer.WriteElementString("description", "Information about products");
 
-
                 var products1 = _productService.SearchProducts(storeId: store.Id, visibleIndividuallyOnly: true);
                 foreach (var product1 in products1)
                 {
@@ -267,7 +272,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
 
                         //title [title] - Title of the item
                         writer.WriteStartElement("title");
-                        var title = product.GetLocalized(x => x.Name, languageId);
+                        var title = _localizationService.GetLocalized(product, x => x.Name, languageId);
                         //title should be not longer than 70 characters
                         if (title.Length > 70)
                             title = title.Substring(0, 70);
@@ -276,17 +281,15 @@ namespace Nop.Plugin.Feed.GoogleShopping
 
                         //description [description] - Description of the item
                         writer.WriteStartElement("description");
-                        string description = product.GetLocalized(x => x.FullDescription, languageId);
+                        string description = _localizationService.GetLocalized(product, x => x.FullDescription, languageId);
                         if (String.IsNullOrEmpty(description))
-                            description = product.GetLocalized(x => x.ShortDescription, languageId);
+                            description = _localizationService.GetLocalized(product, x => x.ShortDescription, languageId);
                         if (String.IsNullOrEmpty(description))
-                            description = product.GetLocalized(x => x.Name, languageId); //description is required
+                            description = _localizationService.GetLocalized(product, x => x.Name, languageId); //description is required
                         //resolving character encoding issues in your data feed
                         description = StripInvalidChars(description, true);
                         writer.WriteCData(description);
                         writer.WriteEndElement(); // description
-
-
 
                         //google product category [google_product_category] - Google's category of the item
                         //the category of the product according to Google’s product taxonomy. http://www.google.com/support/merchants/bin/answer.py?answer=160081
@@ -310,8 +313,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         if (defaultProductCategory != null)
                         {
                             //TODO localize categories
-                            var category = defaultProductCategory.Category
-                                .GetFormattedBreadCrumb(_categoryService, separator: ">", languageId: languageId);
+                            var category = _categoryService.GetFormattedBreadCrumb(defaultProductCategory.Category, separator: ">", languageId: languageId);
                             if (!String.IsNullOrEmpty(category))
                             {
                                 writer.WriteStartElement("g", "product_type", googleBaseNamespace);
@@ -321,16 +323,14 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         }
 
                         //link [link] - URL directly linking to your item's page on your website
-                        var productUrl = GetUrlHelper().RouteUrl("Product", new { SeName = product.GetSeName(languageId) }, GetHttpProtocol());
+                        var productUrl = GetUrlHelper().RouteUrl("Product", new { SeName = _urlRecordService.GetSeName(product) }, GetHttpProtocol());
                         writer.WriteElementString("link", productUrl);
 
                         //image link [image_link] - URL of an image of the item
                         //additional images [additional_image_link]
                         //up to 10 pictures
                         const int maximumPictures = 10;
-                        var storeLocation = _securitySettings.ForceSslForAllPages ? 
-                            (!string.IsNullOrWhiteSpace(store.SecureUrl) ? store.SecureUrl : store.Url.Replace("http://", "https://")): 
-                            store.Url;
+                        var storeLocation = _webHelper.GetStoreLocation(_securitySettings.ForceSslForAllPages);                        
                         var pictures = _pictureService.GetPicturesByProductId(product.Id, maximumPictures);
                         for (int i = 0; i < pictures.Count; i++)
                         {
@@ -370,7 +370,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         string availability = "in stock"; //in stock by default
                         if (product.ManageInventoryMethod == ManageInventoryMethod.ManageStock
                             && product.BackorderMode == BackorderMode.NoBackorders
-                            && product.GetTotalStockQuantity() <= 0)
+                            && _productService.GetTotalStockQuantity(product) <= 0)
                         {
                             availability = "out of stock";
                         }
@@ -405,7 +405,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         }
                         decimal price = _currencyService.ConvertFromPrimaryStoreCurrency(finalPriceBase, currency);
                         //round price now so it matches the product details page
-                        price = RoundingHelper.RoundPrice(price);
+                        price = _priceCalculationService.RoundPrice(price);
 
                         writer.WriteElementString("g", "price", googleBaseNamespace,
                                                   price.ToString(new CultureInfo("en-US", false).NumberFormat) + " " +
@@ -430,15 +430,13 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         }
 
                         //brand [brand] - Brand of the item
-                        var defaultManufacturer =
-                            _manufacturerService.GetProductManufacturersByProductId((product.Id)).FirstOrDefault();
+                        var defaultManufacturer = _manufacturerService.GetProductManufacturersByProductId(product.Id).FirstOrDefault();
                         if (defaultManufacturer != null)
                         {
                             writer.WriteStartElement("g", "brand", googleBaseNamespace);
                             writer.WriteCData(defaultManufacturer.Manufacturer.Name);
                             writer.WriteFullEndElement(); // g:brand
                         }
-
 
                         //mpn [mpn] - Manufacturer Part Number (MPN) of the item
                         var mpn = product.ManufacturerPartNumber;
@@ -592,35 +590,35 @@ namespace Nop.Plugin.Feed.GoogleShopping
             _objectContext.Install();
 
             //locales
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Store", "Store");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Store.Hint", "Select the store that will be used to generate the feed.");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Currency", "Currency");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Currency.Hint", "Select the default currency that will be used to generate the feed.");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.DefaultGoogleCategory", "Default Google category");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.DefaultGoogleCategory.Hint", "The default Google category to use if one is not specified.");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.General", "General");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.GeneralInstructions", "<p><ul><li>At least two unique product identifiers are required. So each of your product should have manufacturer (brand) and MPN (manufacturer part number) specified</li><li>Specify default tax values in your Google Merchant Center account settings</li><li>Specify default shipping values in your Google Merchant Center account settings</li><li>In order to get more info about required fields look at the following article <a href=\"http://www.google.com/support/merchants/bin/answer.py?answer=188494\" target=\"_blank\">http://www.google.com/support/merchants/bin/answer.py?answer=188494</a></li></ul></p>");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Generate", "Generate feed");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Override", "Override product settings");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.OverrideInstructions", "<p>You can download the list of allowed Google product category attributes <a href=\"http://www.google.com/support/merchants/bin/answer.py?answer=160081\" target=\"_blank\">here</a></p>");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoWeight", "Pass shipping info (weight)");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoWeight.Hint", "Check if you want to include shipping information (weight) in generated XML file.");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoDimensions", "Pass shipping info (dimensions)");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoDimensions.Hint", "Check if you want to include shipping information (dimensions) in generated XML file.");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.PricesConsiderPromotions", "Prices consider promotions");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.PricesConsiderPromotions.Hint", "Check if you want prices to be calculated with promotions (tier prices, discounts, special prices, tax, etc). But please note that it can significantly reduce time required to generate the feed file.");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.ProductPictureSize", "Product thumbnail image size");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.ProductPictureSize.Hint", "The default size (pixels) for product thumbnail images.");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.ProductName", "Product");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.GoogleCategory", "Google Category");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.Gender", "Gender");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.AgeGroup", "Age group");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.Color", "Color");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.Size", "Size");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.CustomGoods", "Custom goods (no identifier exists)");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.SuccessResult", "Google Shopping feed has been successfully generated.");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.StaticFilePath", "Generated file path (static)");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.StaticFilePath.Hint", "A file path of the generated file. It's static for your store and can be shared with the Google Shopping service.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Store", "Store");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Store.Hint", "Select the store that will be used to generate the feed.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Currency", "Currency");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Currency.Hint", "Select the default currency that will be used to generate the feed.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.DefaultGoogleCategory", "Default Google category");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.DefaultGoogleCategory.Hint", "The default Google category to use if one is not specified.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.General", "General");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.GeneralInstructions", "<p><ul><li>At least two unique product identifiers are required. So each of your product should have manufacturer (brand) and MPN (manufacturer part number) specified</li><li>Specify default tax values in your Google Merchant Center account settings</li><li>Specify default shipping values in your Google Merchant Center account settings</li><li>In order to get more info about required fields look at the following article <a href=\"http://www.google.com/support/merchants/bin/answer.py?answer=188494\" target=\"_blank\">http://www.google.com/support/merchants/bin/answer.py?answer=188494</a></li></ul></p>");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Generate", "Generate feed");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Override", "Override product settings");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.OverrideInstructions", "<p>You can download the list of allowed Google product category attributes <a href=\"http://www.google.com/support/merchants/bin/answer.py?answer=160081\" target=\"_blank\">here</a></p>");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoWeight", "Pass shipping info (weight)");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoWeight.Hint", "Check if you want to include shipping information (weight) in generated XML file.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoDimensions", "Pass shipping info (dimensions)");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoDimensions.Hint", "Check if you want to include shipping information (dimensions) in generated XML file.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.PricesConsiderPromotions", "Prices consider promotions");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.PricesConsiderPromotions.Hint", "Check if you want prices to be calculated with promotions (tier prices, discounts, special prices, tax, etc). But please note that it can significantly reduce time required to generate the feed file.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.ProductPictureSize", "Product thumbnail image size");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.ProductPictureSize.Hint", "The default size (pixels) for product thumbnail images.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.ProductName", "Product");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.GoogleCategory", "Google Category");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.Gender", "Gender");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.AgeGroup", "Age group");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.Color", "Color");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.Size", "Size");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.CustomGoods", "Custom goods (no identifier exists)");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.SuccessResult", "Google Shopping feed has been successfully generated.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.StaticFilePath", "Generated file path (static)");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.StaticFilePath.Hint", "A file path of the generated file. It's static for your store and can be shared with the Google Shopping service.");
             
             base.Install();
         }
@@ -637,35 +635,35 @@ namespace Nop.Plugin.Feed.GoogleShopping
             _objectContext.Uninstall();
 
             //locales
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Store");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Store.Hint");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Currency");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Currency.Hint");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.DefaultGoogleCategory");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.DefaultGoogleCategory.Hint");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.General");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.GeneralInstructions");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Generate");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Override");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.OverrideInstructions");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoWeight");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoWeight.Hint");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoDimensions");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoDimensions.Hint");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.PricesConsiderPromotions");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.PricesConsiderPromotions.Hint");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.ProductPictureSize");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.ProductPictureSize.Hint");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.ProductName");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.GoogleCategory");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.Gender");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.AgeGroup");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.Color");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.Size");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.CustomGoods");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.SuccessResult");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.StaticFilePath");
-            this.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.StaticFilePath.Hint");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Store");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Store.Hint");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Currency");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Currency.Hint");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.DefaultGoogleCategory");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.DefaultGoogleCategory.Hint");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.General");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.GeneralInstructions");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Generate");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Override");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.OverrideInstructions");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoWeight");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoWeight.Hint");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoDimensions");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.PassShippingInfoDimensions.Hint");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.PricesConsiderPromotions");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.PricesConsiderPromotions.Hint");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.ProductPictureSize");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.ProductPictureSize.Hint");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.ProductName");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.GoogleCategory");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.Gender");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.AgeGroup");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.Color");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.Size");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Products.CustomGoods");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.SuccessResult");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.StaticFilePath");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.StaticFilePath.Hint");
 
             base.Uninstall();
         }

@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core;
 using Nop.Core.Domain.Stores;
-using Nop.Core.Plugins;
 using Nop.Plugin.Feed.GoogleShopping.Domain;
 using Nop.Plugin.Feed.GoogleShopping.Models;
 using Nop.Plugin.Feed.GoogleShopping.Services;
@@ -15,6 +14,7 @@ using Nop.Services.Configuration;
 using Nop.Services.Directory;
 using Nop.Services.Localization;
 using Nop.Services.Logging;
+using Nop.Services.Plugins;
 using Nop.Services.Security;
 using Nop.Services.Stores;
 using Nop.Web.Framework;
@@ -29,6 +29,8 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
     [Area(AreaNames.Admin)]
     public class FeedGoogleShoppingController : BasePluginController
     {
+        #region Fields
+
         private readonly IGoogleService _googleService;
         private readonly IProductService _productService;
         private readonly ICurrencyService _currencyService;
@@ -41,6 +43,10 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
         private readonly ISettingService _settingService;
         private readonly IPermissionService _permissionService;
         private readonly IHostingEnvironment _hostingEnvironment;
+
+        #endregion
+
+        #region Ctor
 
         public FeedGoogleShoppingController(IGoogleService googleService,
             IProductService productService,
@@ -68,6 +74,10 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
             this._permissionService = permissionService;
             this._hostingEnvironment = hostingEnvironment;
         }
+
+        #endregion
+
+        #region Methods
 
         public IActionResult Configure()
         {
@@ -192,7 +202,6 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
                                 {
                                     ProductId = x.Id,
                                     ProductName = x.Name
-
                                 };
                                 var googleProduct = _googleService.GetByProductId(x.Id);
                                 if (googleProduct != null)
@@ -228,7 +237,6 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
             var googleProduct = _googleService.GetByProductId(model.ProductId);
             if (googleProduct != null)
             {
-
                 googleProduct.Taxonomy = model.GoogleCategory;
                 googleProduct.Gender = model.Gender;
                 googleProduct.AgeGroup = model.AgeGroup;
@@ -255,5 +263,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
 
             return new NullJsonResult();
         }
+
+        #endregion
     }
 }

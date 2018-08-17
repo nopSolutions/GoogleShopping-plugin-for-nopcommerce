@@ -100,9 +100,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Services
                 return new List<string>();
 
             //parse the file
-            var result = fileContent.Split(new [] {"\n", "\r\n"}, StringSplitOptions.RemoveEmptyEntries)
-
-                .ToList();
+            var result = fileContent.Split(new [] {"\n", "\r\n"}, StringSplitOptions.RemoveEmptyEntries).ToList();
             return result;
         }
 
