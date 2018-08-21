@@ -1,11 +1,13 @@
 ﻿@model Nop.Plugin.Feed.GoogleShopping.Models.FeedGoogleShoppingModel
 
+@await Component.InvokeAsync("StoreScopeConfiguration")
 <div class="panel-group">
     <div class="panel panel-default">
         <div class="panel-body">
             @T("Plugins.Feed.GoogleShopping.GeneralInstructions")
             <div class="form-group">
                 <div class="col-md-3">
+                    <nop-override-store-checkbox asp-for="ProductPictureSize_OverrideForStore" asp-input="ProductPictureSize" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                     <nop-label asp-for="ProductPictureSize" />
                 </div>
                 <div class="col-md-9">
@@ -15,6 +17,7 @@
             </div>
             <div class="form-group">
                 <div class="col-md-3">
+                    <nop-override-store-checkbox asp-for="PassShippingInfoWeight_OverrideForStore" asp-input="PassShippingInfoWeight" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                     <nop-label asp-for="PassShippingInfoWeight" />
                 </div>
                 <div class="col-md-9">
@@ -24,6 +27,7 @@
             </div>
             <div class="form-group">
                 <div class="col-md-3">
+                    <nop-override-store-checkbox asp-for="PassShippingInfoDimensions_OverrideForStore" asp-input="PassShippingInfoDimensions" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                     <nop-label asp-for="PassShippingInfoDimensions" />
                 </div>
                 <div class="col-md-9">
@@ -33,6 +37,7 @@
             </div>
             <div class="form-group">
                 <div class="col-md-3">
+                    <nop-override-store-checkbox asp-for="PricesConsiderPromotions_OverrideForStore" asp-input="PricesConsiderPromotions" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                     <nop-label asp-for="PricesConsiderPromotions" />
                 </div>
                 <div class="col-md-9">
@@ -40,17 +45,9 @@
                     <span asp-validation-for="PricesConsiderPromotions"></span>
                 </div>
             </div>
-            <div class="form-group" @(Model.AvailableStores.SelectionIsNotPossible() ? Html.Raw("style=\"display:none\"") : null)>
-                <div class="col-md-3">
-                    <nop-label asp-for="StoreId" />
-                </div>
-                <div class="col-md-9">
-                    <nop-select asp-for="StoreId" asp-items="Model.AvailableStores" />
-                    <span asp-validation-for="StoreId"></span>
-                </div>
-            </div>
             <div class="form-group">
                 <div class="col-md-3">
+                    <nop-override-store-checkbox asp-for="CurrencyId_OverrideForStore" asp-input="CurrencyId" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                     <nop-label asp-for="CurrencyId" />
                 </div>
                 <div class="col-md-9">
@@ -60,6 +57,7 @@
             </div>
             <div class="form-group">
                 <div class="col-md-3">
+                    <nop-override-store-checkbox asp-for="DefaultGoogleCategory_OverrideForStore" asp-input="DefaultGoogleCategory" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                     <nop-label asp-for="DefaultGoogleCategory" />
                 </div>
                 <div class="col-md-9">

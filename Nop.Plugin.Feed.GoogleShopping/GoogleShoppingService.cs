@@ -209,7 +209,9 @@ namespace Nop.Plugin.Feed.GoogleShopping
             {
                 Encoding = Encoding.UTF8
             };
-            
+
+            var googleShoppingSettings = _settingService.LoadSetting<GoogleShoppingSettings>(store.Id);
+
             //language
             var languageId = 0;
             var languages = _languageService.GetAllLanguages(storeId: store.Id);
@@ -299,7 +301,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         if (googleProduct != null)
                             googleProductCategory = googleProduct.Taxonomy;
                         if (String.IsNullOrEmpty(googleProductCategory))
-                            googleProductCategory = _googleShoppingSettings.DefaultGoogleCategory;
+                            googleProductCategory = googleShoppingSettings.DefaultGoogleCategory;
                         if (String.IsNullOrEmpty(googleProductCategory))
                             throw new NopException("Default Google category is not set");
                         writer.WriteStartElement("g", "google_product_category", googleBaseNamespace);
@@ -336,7 +338,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         {
                             var picture = pictures[i];
                             var imageUrl = _pictureService.GetPictureUrl(picture,
-                                _googleShoppingSettings.ProductPictureSize,
+                                googleShoppingSettings.ProductPictureSize,
                                 storeLocation: storeLocation);
 
                             if (i == 0)
@@ -353,14 +355,14 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         if (!pictures.Any())
                         {
                             //no picture? submit a default one
-                            var imageUrl = _pictureService.GetDefaultPictureUrl(_googleShoppingSettings.ProductPictureSize, storeLocation: storeLocation);
+                            var imageUrl = _pictureService.GetDefaultPictureUrl(googleShoppingSettings.ProductPictureSize, storeLocation: storeLocation);
                             writer.WriteElementString("g", "image_link", googleBaseNamespace, imageUrl);
                         }
 
                         //condition [condition] - Condition or state of the item
                         writer.WriteElementString("g", "condition", googleBaseNamespace, "new");
 
-                        writer.WriteElementString("g", "expiration_date", googleBaseNamespace, DateTime.Now.AddDays(_googleShoppingSettings.ExpirationNumberOfDays).ToString("yyyy-MM-dd"));
+                        writer.WriteElementString("g", "expiration_date", googleBaseNamespace, DateTime.Now.AddDays(googleShoppingSettings.ExpirationNumberOfDays).ToString("yyyy-MM-dd"));
 
                         #endregion
 
@@ -386,7 +388,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         //price [price] - Price of the item
                         var currency = GetUsedCurrency();
                         decimal finalPriceBase;
-                        if (_googleShoppingSettings.PricesConsiderPromotions)
+                        if (googleShoppingSettings.PricesConsiderPromotions)
                         {
                             var minPossiblePrice = _priceCalculationService.GetFinalPrice(product, _workContext.CurrentCustomer);
 
@@ -505,7 +507,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
 
                         //shipping weight [shipping_weight] - Weight of the item for shipping
                         //We accept only the following units of weight: lb, oz, g, kg.
-                        if (_googleShoppingSettings.PassShippingInfoWeight)
+                        if (googleShoppingSettings.PassShippingInfoWeight)
                         {
                             string weightName;
                             var shippingWeight = product.Weight;
@@ -535,7 +537,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         //shipping width [shipping_width] - Width of the item for shipping
                         //shipping height [shipping_height] - Height of the item for shipping
                         //We accept only the following units of length: in, cm
-                        if (_googleShoppingSettings.PassShippingInfoDimensions)
+                        if (googleShoppingSettings.PassShippingInfoDimensions)
                         {
                             string dimensionName;
                             var length = product.Length;
