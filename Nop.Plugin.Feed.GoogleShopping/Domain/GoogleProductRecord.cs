@@ -20,6 +20,5 @@ namespace Nop.Plugin.Feed.GoogleShopping.Domain
         public string Size { get; set; }
         public string Material { get; set; }
         public string Pattern { get; set; }
-        public string ItemGroupId { get; set; }
     }
 }

@@ -25,10 +25,6 @@ namespace Nop.Plugin.Feed.GoogleShopping
         public bool PricesConsiderPromotions { get; set; }
 
         /// <summary>
-        /// Store identifier for which feed file(s) will be generated
-        /// </summary>
-        public int StoreId { get; set; }
-        /// <summary>
         /// Currency identifier for which feed file(s) will be generated
         /// </summary>
         public int CurrencyId { get; set; }
