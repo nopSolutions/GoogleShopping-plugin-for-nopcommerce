@@ -1,18 +1,19 @@
-﻿@using Nop.Plugin.Feed.GoogleShopping.Models;
+﻿@using Nop.Plugin.Feed.GoogleShopping;
+@using Nop.Plugin.Feed.GoogleShopping.Models;
+
 @model FeedGoogleShoppingModel
 @{
     Layout = "_ConfigurePlugin";
-
-    Html.AddCssFileParts("~/Plugins/Feed.GoogleShopping/Content/styles.css");
+    Html.AddCssFileParts("~/Plugins/Feed.GoogleShopping/Content/styles.css", excludeFromBundle: true);
 }
 
-<form asp-controller="FeedGoogleShopping" asp-action="Configure" method="post">
-    <nop-tabs id="googlebase-configure">
-        <nop-tab asp-name="tab-general" asp-title="@T("Plugins.Feed.GoogleShopping.General")" asp-default="true">
+<form asp-controller="FeedGoogleShopping" asp-action="Configure" method="post" id="google-shopping-form">
+    <nop-panels id="googlebase-panels">
+        <nop-panel asp-name="googlebase-general" asp-icon="fa fa-info" asp-title="@T("Plugins.Feed.GoogleShopping.General")" asp-hide-block-attribute-name="@GoogleShoppingDefaults.HideGeneralBlock" asp-hide="@Model.HideGeneralBlock" asp-advanced="false">
             @await Html.PartialAsync("~/Plugins/Feed.GoogleShopping/Views/_Configure.General.cshtml", Model)
-        </nop-tab>
-        <nop-tab asp-name="tab-override" asp-title="@T("Plugins.Feed.GoogleShopping.Override")">
+        </nop-panel>
+        <nop-panel asp-name="googlebase-override" asp-icon="fa fa-exchange" asp-title="@T("Plugins.Feed.GoogleShopping.Override")" asp-hide-block-attribute-name="@GoogleShoppingDefaults.HideProductSettingsBlock" asp-hide="@Model.HideProductSettingsBlock">
             @await Html.PartialAsync("~/Plugins/Feed.GoogleShopping/Views/_Configure.Override.cshtml", Model)
-        </nop-tab>
-    </nop-tabs>
+        </nop-panel>
+    </nop-panels>
 </form>

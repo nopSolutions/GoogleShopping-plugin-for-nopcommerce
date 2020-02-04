@@ -1,4 +1,4 @@
-using Autofac;
+﻿using Autofac;
 using Autofac.Core;
 using Nop.Core.Configuration;
 using Nop.Core.Data;
@@ -40,12 +40,6 @@ namespace Nop.Plugin.Feed.GoogleShopping.Infrastructure
         /// <summary>
         /// Order of this dependency registrar implementation
         /// </summary>
-        public int Order
-        {
-            get
-            {
-                return 1;
-            }
-        }
+        public int Order => 1;
     }
 }

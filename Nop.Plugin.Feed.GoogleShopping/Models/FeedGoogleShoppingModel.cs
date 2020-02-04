@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Nop.Web.Framework.Models;
 using Nop.Web.Framework.Mvc.ModelBinding;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Models
@@ -12,6 +11,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Models
             AvailableCurrencies = new List<SelectListItem>();
             AvailableGoogleCategories = new List<SelectListItem>();
             GeneratedFiles = new List<GeneratedFileModel>();
+            GoogleProductSearchModel = new GoogleProductSearchModel();
         }
 
         public int ActiveStoreScopeConfiguration { get; set; }
@@ -44,37 +44,11 @@ namespace Nop.Plugin.Feed.GoogleShopping.Models
 
         [NopResourceDisplayName("Plugins.Feed.GoogleShopping.StaticFilePath")]
         public IList<GeneratedFileModel> GeneratedFiles { get; set; }
-        
-        public class GeneratedFileModel : BaseNopModel
-        {
-            public string StoreName { get; set; }
-            public string FileUrl { get; set; }
-        }
 
-        public class GoogleProductModel : BaseNopModel
-        {
-            public int ProductId { get; set; }
+        public bool HideGeneralBlock { get; set; }
 
-            [NopResourceDisplayName("Plugins.Feed.GoogleShopping.Products.ProductName")]
-            public string ProductName { get; set; }
+        public bool HideProductSettingsBlock { get; set; }
 
-            [NopResourceDisplayName("Plugins.Feed.GoogleShopping.Products.GoogleCategory")]
-            public string GoogleCategory { get; set; }
-
-            [NopResourceDisplayName("Plugins.Feed.GoogleShopping.Products.Gender")]
-            public string Gender { get; set; }
-
-            [NopResourceDisplayName("Plugins.Feed.GoogleShopping.Products.AgeGroup")]
-            public string AgeGroup { get; set; }
-
-            [NopResourceDisplayName("Plugins.Feed.GoogleShopping.Products.Color")]
-            public string Color { get; set; }
-
-            [NopResourceDisplayName("Plugins.Feed.GoogleShopping.Products.Size")]
-            public string GoogleSize { get; set; }
-
-            [NopResourceDisplayName("Plugins.Feed.GoogleShopping.Products.CustomGoods")]
-            public bool CustomGoods { get; set; }
-        }
+        public GoogleProductSearchModel GoogleProductSearchModel { get; set; }
     }
 }

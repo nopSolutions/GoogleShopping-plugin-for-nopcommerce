@@ -15,7 +15,6 @@ using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Security;
 using Nop.Core.Domain.Stores;
-using Nop.Core.Plugins;
 using Nop.Plugin.Feed.GoogleShopping.Data;
 using Nop.Plugin.Feed.GoogleShopping.Services;
 using Nop.Services.Catalog;
@@ -24,6 +23,7 @@ using Nop.Services.Configuration;
 using Nop.Services.Directory;
 using Nop.Services.Localization;
 using Nop.Services.Media;
+using Nop.Services.Plugins;
 using Nop.Services.Seo;
 using Nop.Services.Tax;
 
@@ -85,29 +85,29 @@ namespace Nop.Plugin.Feed.GoogleShopping
             IUrlRecordService urlRecordService,
             IActionContextAccessor actionContextAccessor)
         {
-            this._googleService = googleService;
-            this._priceCalculationService = priceCalculationService;
-            this._taxService = taxService;
-            this._productService = productService;
-            this._categoryService = categoryService;
-            this._manufacturerService = manufacturerService;
-            this._pictureService = pictureService;
-            this._currencyService = currencyService;
-            this._languageService = languageService;
-            this._localizationService = localizationService;
-            this._settingService = settingService;
-            this._workContext = workContext;
-            this._measureService = measureService;
-            this._measureSettings = measureSettings;
-            this._googleShoppingSettings = googleShoppingSettings;
-            this._currencySettings = currencySettings;
-            this._securitySettings = securitySettings;
-            this._objectContext = objectContext;
-            this._webHelper = webHelper;
-            this._hostingEnvironment = hostingEnvironment;
-            this._urlHelperFactory = urlHelperFactory;
-            this._urlRecordService = urlRecordService;
-            this._actionContextAccessor = actionContextAccessor;
+            _googleService = googleService;
+            _priceCalculationService = priceCalculationService;
+            _taxService = taxService;
+            _productService = productService;
+            _categoryService = categoryService;
+            _manufacturerService = manufacturerService;
+            _pictureService = pictureService;
+            _currencyService = currencyService;
+            _languageService = languageService;
+            _localizationService = localizationService;
+            _settingService = settingService;
+            _workContext = workContext;
+            _measureService = measureService;
+            _measureSettings = measureSettings;
+            _googleShoppingSettings = googleShoppingSettings;
+            _currencySettings = currencySettings;
+            _securitySettings = securitySettings;
+            _objectContext = objectContext;
+            _webHelper = webHelper;
+            _hostingEnvironment = hostingEnvironment;
+            _urlHelperFactory = urlHelperFactory;
+            _urlRecordService = urlRecordService;
+            _actionContextAccessor = actionContextAccessor;
         }
 
         #endregion
@@ -121,7 +121,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
         /// <returns>Valid string</returns>
         protected virtual string StripInvalidChars(string input, bool isHtmlEncoded)
         {
-            if (String.IsNullOrWhiteSpace(input))
+            if (string.IsNullOrWhiteSpace(input))
                 return input;
 
             //Microsoft uses a proprietary encoding (called CP-1252) for the bullet symbol and some other special characters, 
@@ -283,10 +283,10 @@ namespace Nop.Plugin.Feed.GoogleShopping
 
                         //description [description] - Description of the item
                         writer.WriteStartElement("description");
-                        string description = _localizationService.GetLocalized(product, x => x.FullDescription, languageId);
-                        if (String.IsNullOrEmpty(description))
+                        var description = _localizationService.GetLocalized(product, x => x.FullDescription, languageId);
+                        if (string.IsNullOrEmpty(description))
                             description = _localizationService.GetLocalized(product, x => x.ShortDescription, languageId);
-                        if (String.IsNullOrEmpty(description))
+                        if (string.IsNullOrEmpty(description))
                             description = _localizationService.GetLocalized(product, x => x.Name, languageId); //description is required
                         //resolving character encoding issues in your data feed
                         description = StripInvalidChars(description, true);
@@ -295,14 +295,14 @@ namespace Nop.Plugin.Feed.GoogleShopping
 
                         //google product category [google_product_category] - Google's category of the item
                         //the category of the product according to Google’s product taxonomy. http://www.google.com/support/merchants/bin/answer.py?answer=160081
-                        string googleProductCategory = "";
+                        var googleProductCategory = "";
                         //var googleProduct = _googleService.GetByProductId(product.Id);
                         var googleProduct = allGoogleProducts.FirstOrDefault(x => x.ProductId == product.Id);
                         if (googleProduct != null)
                             googleProductCategory = googleProduct.Taxonomy;
-                        if (String.IsNullOrEmpty(googleProductCategory))
+                        if (string.IsNullOrEmpty(googleProductCategory))
                             googleProductCategory = googleShoppingSettings.DefaultGoogleCategory;
-                        if (String.IsNullOrEmpty(googleProductCategory))
+                        if (string.IsNullOrEmpty(googleProductCategory))
                             throw new NopException("Default Google category is not set");
                         writer.WriteStartElement("g", "google_product_category", googleBaseNamespace);
                         writer.WriteCData(googleProductCategory);
@@ -316,7 +316,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         {
                             //TODO localize categories
                             var category = _categoryService.GetFormattedBreadCrumb(defaultProductCategory.Category, separator: ">", languageId: languageId);
-                            if (!String.IsNullOrEmpty(category))
+                            if (!string.IsNullOrEmpty(category))
                             {
                                 writer.WriteStartElement("g", "product_type", googleBaseNamespace);
                                 writer.WriteCData(category);
@@ -334,7 +334,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         const int maximumPictures = 10;
                         var storeLocation = _webHelper.GetStoreLocation(_securitySettings.ForceSslForAllPages);                        
                         var pictures = _pictureService.GetPicturesByProductId(product.Id, maximumPictures);
-                        for (int i = 0; i < pictures.Count; i++)
+                        for (var i = 0; i < pictures.Count; i++)
                         {
                             var picture = pictures[i];
                             var imageUrl = _pictureService.GetPictureUrl(picture,
@@ -369,7 +369,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         #region Availability & Price
 
                         //availability [availability] - Availability status of the item
-                        string availability = "in stock"; //in stock by default
+                        var availability = "in stock"; //in stock by default
                         if (product.ManageInventoryMethod == ManageInventoryMethod.ManageStock
                             && product.BackorderMode == BackorderMode.NoBackorders
                             && _productService.GetTotalStockQuantity(product) <= 0)
@@ -399,13 +399,13 @@ namespace Nop.Plugin.Feed.GoogleShopping
                                     _priceCalculationService.GetFinalPrice(product, _workContext.CurrentCustomer, quantity: int.MaxValue));
                             }
 
-                            finalPriceBase = _taxService.GetProductPrice(product, minPossiblePrice, out decimal _);
+                            finalPriceBase = _taxService.GetProductPrice(product, minPossiblePrice, out var _);
                         }
                         else
                         {
                             finalPriceBase = product.Price;
                         }
-                        decimal price = _currencyService.ConvertFromPrimaryStoreCurrency(finalPriceBase, currency);
+                        var price = _currencyService.ConvertFromPrimaryStoreCurrency(finalPriceBase, currency);
                         //round price now so it matches the product details page
                         price = _priceCalculationService.RoundPrice(price);
 
@@ -424,7 +424,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
 
                         //GTIN [gtin] - GTIN
                         var gtin = product.Gtin;
-                        if (!String.IsNullOrEmpty(gtin))
+                        if (!string.IsNullOrEmpty(gtin))
                         {
                             writer.WriteStartElement("g", "gtin", googleBaseNamespace);
                             writer.WriteCData(gtin);
@@ -442,7 +442,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
 
                         //mpn [mpn] - Manufacturer Part Number (MPN) of the item
                         var mpn = product.ManufacturerPartNumber;
-                        if (!String.IsNullOrEmpty(mpn))
+                        if (!string.IsNullOrEmpty(mpn))
                         {
                             writer.WriteStartElement("g", "mpn", googleBaseNamespace);
                             writer.WriteCData(mpn);
@@ -464,7 +464,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         */
 
                         //gender [gender] - Gender of the item
-                        if (googleProduct != null && !String.IsNullOrEmpty(googleProduct.Gender))
+                        if (googleProduct != null && !string.IsNullOrEmpty(googleProduct.Gender))
                         {
                             writer.WriteStartElement("g", "gender", googleBaseNamespace);
                             writer.WriteCData(googleProduct.Gender);
@@ -472,7 +472,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         }
 
                         //age group [age_group] - Target age group of the item
-                        if (googleProduct != null && !String.IsNullOrEmpty(googleProduct.AgeGroup))
+                        if (googleProduct != null && !string.IsNullOrEmpty(googleProduct.AgeGroup))
                         {
                             writer.WriteStartElement("g", "age_group", googleBaseNamespace);
                             writer.WriteCData(googleProduct.AgeGroup);
@@ -480,7 +480,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         }
 
                         //color [color] - Color of the item
-                        if (googleProduct != null && !String.IsNullOrEmpty(googleProduct.Color))
+                        if (googleProduct != null && !string.IsNullOrEmpty(googleProduct.Color))
                         {
                             writer.WriteStartElement("g", "color", googleBaseNamespace);
                             writer.WriteCData(googleProduct.Color);
@@ -488,7 +488,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         }
 
                         //size [size] - Size of the item
-                        if (googleProduct != null && !String.IsNullOrEmpty(googleProduct.Size))
+                        if (googleProduct != null && !string.IsNullOrEmpty(googleProduct.Size))
                         {
                             writer.WriteStartElement("g", "size", googleBaseNamespace);
                             writer.WriteCData(googleProduct.Size);
@@ -598,6 +598,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Currency.Hint", "Select the default currency that will be used to generate the feed.");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.DefaultGoogleCategory", "Default Google category");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.DefaultGoogleCategory.Hint", "The default Google category to use if one is not specified.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.ExceptionLoadPlugin", "Cannot load the plugin");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.General", "General");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.GeneralInstructions", "<p><ul><li>At least two unique product identifiers are required. So each of your product should have manufacturer (brand) and MPN (manufacturer part number) specified</li><li>Specify default tax values in your Google Merchant Center account settings</li><li>Specify default shipping values in your Google Merchant Center account settings</li><li>In order to get more info about required fields look at the following article <a href=\"http://www.google.com/support/merchants/bin/answer.py?answer=188494\" target=\"_blank\">http://www.google.com/support/merchants/bin/answer.py?answer=188494</a></li></ul></p>");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Feed.GoogleShopping.Generate", "Generate feed");
@@ -643,6 +644,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
             _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Currency.Hint");
             _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.DefaultGoogleCategory");
             _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.DefaultGoogleCategory.Hint");
+            _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.ExceptionLoadPlugin");
             _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.General");
             _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.GeneralInstructions");
             _localizationService.DeletePluginLocaleResource("Plugins.Feed.GoogleShopping.Generate");
@@ -678,7 +680,8 @@ namespace Nop.Plugin.Feed.GoogleShopping
         {
             if (store == null)
                 throw new ArgumentNullException(nameof(store));
-            string filePath = Path.Combine(_hostingEnvironment.WebRootPath, "files\\exportimport", store.Id + "-" + _googleShoppingSettings.StaticFileName);
+            
+            var filePath = Path.Combine(_hostingEnvironment.WebRootPath, "files\\exportimport", store.Id + "-" + _googleShoppingSettings.StaticFileName);
             using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
             {
                 GenerateFeed(fs, store);

@@ -1,0 +1,74 @@
+﻿@model Nop.Plugin.Feed.GoogleShopping.Models.GoogleProductModel
+
+<div asp-validation-summary="All"></div>
+<input asp-for="ProductId" type="hidden" />
+
+@if (ViewBag.RefreshPage == true)
+{
+    <script>
+        try {window.opener.document.forms['@(Context.Request.Query["formId"])'].@(Context.Request.Query["btnId"]).click();}
+        catch (e){}
+        window.close();
+    </script>
+}
+
+<div class="panel-group">
+    <div class="panel panel-default panel-popup">
+        <div class="panel-body">
+            <div class="form-group">
+                <div class="col-sm-3">
+                    <nop-label asp-for="GoogleCategory" />
+                </div>
+                <div class="col-sm-9">
+                    <nop-editor asp-for="GoogleCategory" />
+                    <span asp-validation-for="GoogleCategory"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-3">
+                    <nop-label asp-for="Gender" />
+                </div>
+                <div class="col-sm-9">
+                    <nop-textarea asp-for="Gender" />
+                    <span asp-validation-for="Gender"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-3">
+                    <nop-label asp-for="AgeGroup" />
+                </div>
+                <div class="col-sm-9">
+                    <nop-editor asp-for="AgeGroup" />
+                    <span asp-validation-for="AgeGroup"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-3">
+                    <nop-label asp-for="Color" />
+                </div>
+                <div class="col-sm-9">
+                    <nop-editor asp-for="Color" />
+                    <span asp-validation-for="Color"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-3">
+                    <nop-label asp-for="GoogleSize" />
+                </div>
+                <div class="col-sm-9">
+                    <nop-editor asp-for="GoogleSize" />
+                    <span asp-validation-for="GoogleSize"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-3">
+                    <nop-label asp-for="CustomGoods" />
+                </div>
+                <div class="col-sm-9">
+                    <nop-editor asp-for="CustomGoods" />
+                    <span asp-validation-for="CustomGoods"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,4 +1,5 @@
 ﻿@using Nop.Core.Domain.Common
+@using Nop.Plugin.Feed.GoogleShopping.Models
 @model Nop.Plugin.Feed.GoogleShopping.Models.FeedGoogleShoppingModel
 @inject AdminAreaSettings adminAreaSettings
 
@@ -11,186 +12,75 @@
     <div class="panel panel-default">
         <div class="panel-body">
             @T("Plugins.Feed.GoogleShopping.OverrideInstructions")
-            <script id="google-popup-editor" type="text/x-kendo-template">
-                    <div style="padding: 0 20px;">
-                        <div class="form-horizontal">
-                            <div class="form-group">
-                                <div class="col-md-5">
-                                    <div class="label-wrapper">
-                                        <label for="GoogleCategory" class="control-label">
-                                            @T("Plugins.Feed.GoogleShopping.Products.GoogleCategory")
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-7">
-                                    <input name="GoogleCategory" class="form-control" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <div class="col-md-5">
-                                    <div class="label-wrapper">
-                                        <label for="Gender" class="control-label">
-                                            @T("Plugins.Feed.GoogleShopping.Products.Gender")
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-7">
-                                    <input name="Gender" class="form-control" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <div class="col-md-5">
-                                    <div class="label-wrapper">
-                                        <label for="AgeGroup" class="control-label">
-                                            @T("Plugins.Feed.GoogleShopping.Products.AgeGroup")
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-7">
-                                    <input name="AgeGroup" class="form-control" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <div class="col-md-5">
-                                    <div class="label-wrapper">
-                                        <label for="Color" class="control-label">
-                                            @T("Plugins.Feed.GoogleShopping.Products.Color")
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-7">
-                                    <input name="Color" class="form-control" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <div class="col-md-5">
-                                    <div class="label-wrapper">
-                                        <label for="GoogleSize" class="control-label">
-                                            @T("Plugins.Feed.GoogleShopping.Products.Size")
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-7">
-                                    <input name="GoogleSize" class="form-control" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <div class="col-md-5">
-                                    <div class="label-wrapper">
-                                        <label for="CustomGoods" class="control-label">
-                                            @T("Plugins.Feed.GoogleShopping.Products.CustomGoods")
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-7">
-                                    <input name="CustomGoods" type="checkbox" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </script>
 
-            <div id="products-grid"></div>
+            @await Html.PartialAsync("Table", new DataTablesModel
+            {
+                Name = "products-grid",
+                UrlRead = new DataUrl("GoogleProductList", "FeedGoogleShopping", null),
+                Length = Model.GoogleProductSearchModel.PageSize,
+                LengthMenu = Model.GoogleProductSearchModel.AvailablePageSizes,
+                ColumnCollection = new List<ColumnProperty>
+                {
+                    new ColumnProperty(nameof(GoogleProductModel.ProductName))
+                    {
+                        Title = T("Plugins.Feed.GoogleShopping.Products.ProductName").Text,
+                        Width = "300"
+                    },
+                    new ColumnProperty(nameof(GoogleProductModel.GoogleCategory))
+                    {
+                        Title = T("Plugins.Feed.GoogleShopping.Products.GoogleCategory").Text,
+                        Render = new RenderCustom("renderColumnData")
+                    },
+                    new ColumnProperty(nameof(GoogleProductModel.ProductId))
+                    {
+                        Title = T("Admin.Common.Edit").Text,
+                        Width = "100",
+                        ClassName = NopColumnClassDefaults.Button,
+                        Render = new RenderCustom("renderColumnEdit")
+                    }
+                }
+            })
 
             <script>
-                $(document).ready(function() {
-                    $("#products-grid").kendoGrid({
-                        dataSource: {
-                            type: "json",
-                            transport: {
-                                read: {
-                                    url: "@Html.Raw(Url.Action("GoogleProductList", "FeedGoogleShopping"))",
-                                    type: "POST",
-                                    dataType: "json",
-                                    data: addAntiForgeryToken
-                                },
-                                update: {
-                                    url: "@Html.Raw(Url.Action("GoogleProductUpdate", "FeedGoogleShopping"))",
-                                    type: "POST",
-                                    dataType: "json",
-                                    data: addAntiForgeryToken
-                                }
-                            },
-                            schema: {
-                                data: "Data",
-                                total: "Total",
-                                errors: "Errors",
-                                model: {
-                                    id: "Id",
-                                    fields: {
-                                        ProductId: { editable: false, type: "number" },
-                                        ProductName: { editable: false, type: "string" },
-                                        GoogleCategory: { editable: true, type: "string" },
-                                        Gender: { editable: true, type: "string" },
-                                        AgeGroup: { editable: true, type: "string" },
-                                        Color: { editable: true, type: "string" },
-                                        GoogleSize: { editable: true, type: "string" },
-                                        CustomGoods: { editable: true, type: "bool" },
-                                        Id: { editable: false, type: "number" }
-                                    }
-                                }
-                            },
-                            requestEnd: function(e) {
-                                if (e.type == "update") {
-                                    this.read();
-                                }
-                            },
-                            error: function(e) {
-                                display_kendoui_grid_error(e);
-                                // Cancel the changes
-                                this.cancelChanges();
-                            },
-                            pageSize: @(defaultGridPageSize),
-                            serverPaging: true,
-                            serverFiltering: true,
-                            serverSorting: true
-                        },
-                        pageable: {
-                            refresh: true,
-                            pageSizes: [@(gridPageSizes)],
-                            @await Html.PartialAsync("~/Areas/Admin/Views/Shared/_GridPagerMessages.cshtml")
-                        },
-                        editable: {
-                            confirmation: "@T("Admin.Common.DeleteConfirmation")",
-                            mode: "popup",
-                            template: kendo.template($("#google-popup-editor").html())
-                        },
-                        scrollable: false,
-                        columns: [{
-                                field: "ProductName",
-                                title: "@T("Plugins.Feed.GoogleShopping.Products.ProductName")",
-                                width: 300
-                            }, {
-                                field: "Id",
-                                title: "Data",
-                                width: 300,
-                                template: '<div class="google-info">' +
-                                    '<dl>' +
-                                    '<dt>@T("Plugins.Feed.GoogleShopping.Products.GoogleCategory"):</dt><dd># if(GoogleCategory !== null) {# #:GoogleCategory# #}  #</dd>' +
-                                    '<dt>@T("Plugins.Feed.GoogleShopping.Products.Gender"):</dt><dd># if(Gender !== null) {# #:Gender# #}  #</dd>' +
-                                    '<dt>@T("Plugins.Feed.GoogleShopping.Products.AgeGroup"):</dt><dd># if(AgeGroup !== null) {# #:AgeGroup# #}  #</dd>' +
-                                    '<dt>@T("Plugins.Feed.GoogleShopping.Products.Color"):</dt><dd># if(Color !== null) {# #:Color# #}  #</dd>' +
-                                    '<dt>@T("Plugins.Feed.GoogleShopping.Products.Size"):</dt><dd># if(GoogleSize !== null) {# #:GoogleSize# #}  #</dd>' +
-                                    '<dt>@T("Plugins.Feed.GoogleShopping.Products.CustomGoods"):</dt><dd>#:CustomGoods#</dd>' +
-                                    '</dl>' +
-                                    '</div>'
-                            }, {
-                                command: {
-                                    name: "edit",
-                                    text: {
-                                        edit: "@T("Admin.Common.Edit")",
-                                        update: "@T("Admin.Common.Update")",
-                                        cancel: "@T("Admin.Common.Cancel")"
-                                    }
-                                },
-                                title: "@T("Admin.Common.Edit")",
-                                width: 150
-                            }
-                        ]
+                function renderColumnEdit(data, type, row, meta) {
+                    return '<button onclick=\"javascript:OpenWindow(\'@Url.Content("~/Admin/FeedGoogleShopping/Edit/")' + data + '?btnId=btnRefresh&formId=google-shopping-form\', 800, 800, true); return false;\" class="btn btn-default"><i class="fa fa-pencil"></i>@T("Admin.Common.Edit")</button>';
+                }
+                
+                function renderColumnData(data, type, row, meta) {
+                    var googleCategory = (row.GoogleCategory !== null) ? row.GoogleCategory : '';
+                    var gender = (row.Gender !== null) ? row.Gender : '';
+                    var ageGroup = (row.AgeGroup !== null) ? row.AgeGroup : '';
+                    var color = (row.Color !== null) ? row.Color : '';
+                    var googleSize = (row.GoogleSize !== null) ? row.GoogleSize : '';
+
+                    return '<div class="google-info">' +
+                        '<dl>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.GoogleCategory"):</dt><dd>' + googleCategory + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.Gender"):</dt><dd>' + gender + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.AgeGroup"):</dt><dd>' + ageGroup + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.Color"):</dt><dd>' + color + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.Size"):</dt><dd>' + googleSize + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.CustomGoods"):</dt><dd>' + row.CustomGoods + '</dd>' +
+                        '</dl>' +
+                    '</div>';
+                }
+            </script>
+
+            <div class="panel-footer">
+                <input type="submit" id="btnRefresh" class="btn btn-default" style="display: none" />
+            </div>
+
+            <script>
+                $(document).ready(function () {
+                    $('#btnRefresh').click(function () {
+                        //refresh grid
+                        updateTable('#products-grid');
+
+                        //return false to don't reload a page
+                        return false;
                     });
                 });
             </script>
-
         </div>
     </div>
 </div>

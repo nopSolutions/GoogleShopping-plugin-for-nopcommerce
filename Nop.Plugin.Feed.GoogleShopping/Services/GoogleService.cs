@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,7 +19,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Services
 
         public GoogleService(IRepository<GoogleProductRecord> gpRepository)
         {
-            this._gpRepository = gpRepository;
+            _gpRepository = gpRepository;
         }
 
         #endregion
@@ -28,8 +28,8 @@ namespace Nop.Plugin.Feed.GoogleShopping.Services
 
         private string GetEmbeddedFileContent(string resourceName)
         {
-            string fullResourceName = $"Nop.Plugin.Feed.GoogleShopping.Files.{resourceName}";
-            var assem = this.GetType().Assembly;
+            var fullResourceName = $"Nop.Plugin.Feed.GoogleShopping.Files.{resourceName}";
+            var assem = GetType().Assembly;
             using (var stream = assem.GetManifestResourceStream(fullResourceName))
             using (var reader = new StreamReader(stream))
                 return reader.ReadToEnd();
@@ -96,7 +96,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Services
         public virtual IList<string> GetTaxonomyList()
         {
             var fileContent = GetEmbeddedFileContent("taxonomy.txt");
-            if (String.IsNullOrEmpty((fileContent)))
+            if (string.IsNullOrEmpty(fileContent))
                 return new List<string>();
 
             //parse the file

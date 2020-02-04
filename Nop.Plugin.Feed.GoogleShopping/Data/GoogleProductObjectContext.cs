@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
@@ -50,7 +50,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Data
         /// <returns>A SQL script</returns>
         public virtual string GenerateCreateScript()
         {
-            return this.Database.GenerateCreateScript();
+            return Database.GenerateCreateScript();
         }
 
         /// <summary>
@@ -77,12 +77,24 @@ namespace Nop.Plugin.Feed.GoogleShopping.Data
         }
 
         /// <summary>
+        /// Creates a LINQ query for the query type based on a raw SQL query
+        /// </summary>
+        /// <typeparam name="TQuery">Query type</typeparam>
+        /// <param name="sql">The raw SQL query</param>
+        /// <param name="parameters">The values to be assigned to parameters</param>
+        /// <returns>An IQueryable representing the raw SQL query</returns>
+        public virtual IQueryable<TQuery> QueryFromSql<TQuery>(string sql, params object[] parameters) where TQuery : class
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
         /// Install
         /// </summary>
         public void Install()
         {
             //create the table
-            this.ExecuteSqlScript(this.GenerateCreateScript());            
+            this.ExecuteSqlScript(GenerateCreateScript());            
         }
 
         /// <summary>
@@ -128,9 +140,9 @@ namespace Nop.Plugin.Feed.GoogleShopping.Data
         /// <returns>The number of rows affected</returns>
         public virtual int ExecuteSqlCommand(RawSqlString sql, bool doNotEnsureTransaction = false, int? timeout = null, params object[] parameters)
         {
-            using (var transaction = this.Database.BeginTransaction())
+            using (var transaction = Database.BeginTransaction())
             {
-                var result = this.Database.ExecuteSqlCommand(sql, parameters);
+                var result = Database.ExecuteSqlCommand(sql, parameters);
                 transaction.Commit();
 
                 return result;
@@ -147,6 +159,6 @@ namespace Nop.Plugin.Feed.GoogleShopping.Data
             throw new NotImplementedException();
         }
 
-        #endregion        
+        #endregion
     }
 }
