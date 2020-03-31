@@ -126,7 +126,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
             //file paths
             foreach (var store in _storeService.GetAllStores())
             {
-                var localFilePath = System.IO.Path.Combine(_hostingEnvironment.WebRootPath, "files\\exportimport", store.Id + "-" + googleShoppingSettings.StaticFileName);
+                var localFilePath = System.IO.Path.Combine(_hostingEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + googleShoppingSettings.StaticFileName);
                 if (System.IO.File.Exists(localFilePath))
                     model.GeneratedFiles.Add(new GeneratedFileModel
                     {

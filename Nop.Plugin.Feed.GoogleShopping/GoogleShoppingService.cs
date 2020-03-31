@@ -695,7 +695,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
             if (store == null)
                 throw new ArgumentNullException(nameof(store));
             
-            var filePath = Path.Combine(_hostingEnvironment.WebRootPath, "files\\exportimport", store.Id + "-" + _googleShoppingSettings.StaticFileName);
+            var filePath = Path.Combine(_hostingEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + _googleShoppingSettings.StaticFileName);
             using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
             {
                 GenerateFeed(fs, store);
