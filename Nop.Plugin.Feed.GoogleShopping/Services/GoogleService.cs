@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Nop.Core.Data;
+using Nop.Data;
 using Nop.Plugin.Feed.GoogleShopping.Domain;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Services
@@ -30,9 +30,9 @@ namespace Nop.Plugin.Feed.GoogleShopping.Services
         {
             var fullResourceName = $"Nop.Plugin.Feed.GoogleShopping.Files.{resourceName}";
             var assem = GetType().Assembly;
-            using (var stream = assem.GetManifestResourceStream(fullResourceName))
-            using (var reader = new StreamReader(stream))
-                return reader.ReadToEnd();
+            using var stream = assem.GetManifestResourceStream(fullResourceName);
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
         }
 
         #endregion

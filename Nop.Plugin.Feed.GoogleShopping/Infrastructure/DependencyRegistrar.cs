@@ -1,14 +1,8 @@
 ﻿using Autofac;
-using Autofac.Core;
 using Nop.Core.Configuration;
-using Nop.Core.Data;
 using Nop.Core.Infrastructure;
 using Nop.Core.Infrastructure.DependencyManagement;
-using Nop.Data;
-using Nop.Plugin.Feed.GoogleShopping.Data;
-using Nop.Plugin.Feed.GoogleShopping.Domain;
 using Nop.Plugin.Feed.GoogleShopping.Services;
-using Nop.Web.Framework.Infrastructure.Extensions;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Infrastructure
 {
@@ -26,15 +20,6 @@ namespace Nop.Plugin.Feed.GoogleShopping.Infrastructure
         public virtual void Register(ContainerBuilder builder, ITypeFinder typeFinder, NopConfig config)
         {
             builder.RegisterType<GoogleService>().As<IGoogleService>().InstancePerLifetimeScope();
-
-            //data context
-            builder.RegisterPluginDataContext<GoogleProductObjectContext>("nop_object_context_google_product");
-
-            //override required repository with our custom context
-            builder.RegisterType<EfRepository<GoogleProductRecord>>()
-                .As<IRepository<GoogleProductRecord>>()
-                .WithParameter(ResolvedParameter.ForNamed<IDbContext>("nop_object_context_google_product"))
-                .InstancePerLifetimeScope();
         }
 
         /// <summary>

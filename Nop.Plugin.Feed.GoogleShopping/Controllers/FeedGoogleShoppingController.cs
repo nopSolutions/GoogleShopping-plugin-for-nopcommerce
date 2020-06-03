@@ -35,7 +35,6 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
         private readonly ICurrencyService _currencyService;
         private readonly IGenericAttributeService _genericAttributeService;
         private readonly IGoogleService _googleService;
-        private readonly IHostingEnvironment _hostingEnvironment;
         private readonly ILocalizationService _localizationService;        
         private readonly INotificationService _notificationService;
         private readonly ILogger _logger;
@@ -46,6 +45,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
         private readonly IStoreContext _storeContext;
         private readonly IStoreService _storeService;
         private readonly IWebHelper _webHelper;
+        private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IWorkContext _workContext;
 
         #endregion
@@ -55,7 +55,6 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
         public FeedGoogleShoppingController(ICurrencyService currencyService,
             IGenericAttributeService genericAttributeService,
             IGoogleService googleService,
-            IHostingEnvironment hostingEnvironment,
             ILocalizationService localizationService,
             INotificationService notificationService,
             ILogger logger,
@@ -66,12 +65,12 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
             IStoreContext storeContext,
             IStoreService storeService,
             IWebHelper webHelper,
+            IWebHostEnvironment webHostEnvironment,
             IWorkContext workContext)
         {
             _currencyService = currencyService;
             _genericAttributeService = genericAttributeService;
             _googleService = googleService;
-            _hostingEnvironment = hostingEnvironment;
             _localizationService = localizationService;
             _notificationService = notificationService;
             _logger = logger;
@@ -82,6 +81,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
             _storeContext = storeContext;
             _storeService = storeService;
             _webHelper = webHelper;
+            _webHostEnvironment = webHostEnvironment;
             _workContext = workContext;
         }
 
@@ -126,7 +126,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
             //file paths
             foreach (var store in _storeService.GetAllStores())
             {
-                var localFilePath = System.IO.Path.Combine(_hostingEnvironment.WebRootPath, "files\\exportimport", store.Id + "-" + googleShoppingSettings.StaticFileName);
+                var localFilePath = System.IO.Path.Combine(_webHostEnvironment.WebRootPath, "files\\exportimport", store.Id + "-" + googleShoppingSettings.StaticFileName);
                 if (System.IO.File.Exists(localFilePath))
                     model.GeneratedFiles.Add(new GeneratedFileModel
                     {
@@ -165,6 +165,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
         [Area(AreaNames.Admin)]
         [HttpPost]
         [FormValueRequired("save")]
+        [AutoValidateAntiforgeryToken]
         public IActionResult Configure(FeedGoogleShoppingModel model)
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManagePlugins))
@@ -210,6 +211,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
 
         [HttpPost, ActionName("Configure")]
         [FormValueRequired("generate")]
+        [AutoValidateAntiforgeryToken]
         public IActionResult GenerateFeed(FeedGoogleShoppingModel model)
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManagePlugins))
@@ -247,7 +249,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
         }
 
         [HttpPost]
-        [AdminAntiForgery]
+        [AutoValidateAntiforgeryToken]
         public IActionResult GoogleProductList(GoogleProductSearchModel searchModel)
         {
             var storeId = _storeContext.ActiveStoreScopeConfiguration;
@@ -315,7 +317,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
         }
 
         [HttpPost]
-        [AdminAntiForgery]
+        [AutoValidateAntiforgeryToken]
         public IActionResult Edit(GoogleProductModel model)
         {
             if (!_permissionService.Authorize(StandardPermissionProvider.ManagePlugins))
