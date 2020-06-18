@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core;
 using Nop.Core.Domain.Stores;
+using Nop.Core.Infrastructure;
 using Nop.Plugin.Feed.GoogleShopping.Domain;
 using Nop.Plugin.Feed.GoogleShopping.Models;
 using Nop.Plugin.Feed.GoogleShopping.Services;
@@ -35,7 +36,8 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
         private readonly ICurrencyService _currencyService;
         private readonly IGenericAttributeService _genericAttributeService;
         private readonly IGoogleService _googleService;
-        private readonly ILocalizationService _localizationService;        
+        private readonly ILocalizationService _localizationService;
+        private readonly INopFileProvider _nopFileProvider;
         private readonly INotificationService _notificationService;
         private readonly ILogger _logger;
         private readonly IPermissionService _permissionService;
@@ -56,6 +58,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
             IGenericAttributeService genericAttributeService,
             IGoogleService googleService,
             ILocalizationService localizationService,
+            INopFileProvider nopFileProvider,
             INotificationService notificationService,
             ILogger logger,
             IPermissionService permissionService,
@@ -72,6 +75,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
             _genericAttributeService = genericAttributeService;
             _googleService = googleService;
             _localizationService = localizationService;
+            _nopFileProvider = nopFileProvider;
             _notificationService = notificationService;
             _logger = logger;
             _permissionService = permissionService;
@@ -126,8 +130,8 @@ namespace Nop.Plugin.Feed.GoogleShopping.Controllers
             //file paths
             foreach (var store in _storeService.GetAllStores())
             {
-                var localFilePath = System.IO.Path.Combine(_webHostEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + googleShoppingSettings.StaticFileName);
-                if (System.IO.File.Exists(localFilePath))
+                var localFilePath = _nopFileProvider.Combine(_webHostEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + googleShoppingSettings.StaticFileName);
+                if (_nopFileProvider.FileExists(localFilePath))
                     model.GeneratedFiles.Add(new GeneratedFileModel
                     {
                         StoreName = store.Name,

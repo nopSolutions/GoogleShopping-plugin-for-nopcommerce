@@ -14,6 +14,7 @@ using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Stores;
+using Nop.Core.Infrastructure;
 using Nop.Plugin.Feed.GoogleShopping.Services;
 using Nop.Services.Catalog;
 using Nop.Services.Common;
@@ -41,6 +42,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
         private readonly ILocalizationService _localizationService;
         private readonly IManufacturerService _manufacturerService;
         private readonly IMeasureService _measureService;
+        private readonly INopFileProvider _nopFileProvider;
         private readonly IPictureService _pictureService;
         private readonly IPriceCalculationService _priceCalculationService;
         private readonly IProductService _productService;
@@ -69,6 +71,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
             ILocalizationService localizationService,
             IManufacturerService manufacturerService,
             IMeasureService measureService,
+            INopFileProvider nopFileProvider,
             IPictureService pictureService,
             IPriceCalculationService priceCalculationService,
             IProductService productService,
@@ -94,6 +97,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
             _manufacturerService = manufacturerService;
             _measureService = measureService;
             _measureSettings = measureSettings;
+            _nopFileProvider = nopFileProvider;
             _pictureService = pictureService;
             _priceCalculationService = priceCalculationService;
             _productService = productService;
@@ -637,7 +641,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
             if (store == null)
                 throw new ArgumentNullException(nameof(store));
             
-            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + _googleShoppingSettings.StaticFileName);
+            var filePath = _nopFileProvider.Combine(_webHostEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + _googleShoppingSettings.StaticFileName);
             using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
             GenerateFeed(fs, store);
         }
