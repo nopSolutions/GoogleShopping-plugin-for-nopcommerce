@@ -6,7 +6,7 @@ This plugin enables integration with Google Shopping, formerly Google Product Se
 
 nopCommerce site: [https://www.nopcommerce.com](https://www.nopcommerce.com)
 
-Listing on nopCommerce "extensions and themes" catalog: [https://www.nopcommerce.com/p/2981/google-shopping-formerly-google-product-search-nopcommerce-team.aspx](https://www.nopcommerce.com/p/2981/google-shopping-formerly-google-product-search-nopcommerce-team.aspx)
+Listing on nopCommerce "extensions and themes" catalog: [https://www.nopcommerce.com/google-shopping-formerly-google-product-search](https://www.nopcommerce.com/google-shopping-formerly-google-product-search
 
 ===========
 
