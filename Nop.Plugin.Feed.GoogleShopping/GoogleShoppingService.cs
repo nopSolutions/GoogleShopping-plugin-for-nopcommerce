@@ -538,8 +538,8 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         var dimensionName = dimensionSystemName switch
                         {
                             "inches" => "in",
-                            //TODO support other dimensions (convert to cm)
-                            _ => throw new Exception("Not supported dimension. Google accepts the following units: in, cm."),//unknown dimension 
+                            "centimeters" => "cm",
+                            _ => throw new Exception("Not supported dimension. Google accepts the following units: in, cm. To add dimensions automatically, you must change the default size system name to 'inches' or 'centimeters'. Configuration-> Shipping-> Measures "), 
                         };
                         writer.WriteElementString("g", "shipping_length", googleBaseNamespace, string.Format(CultureInfo.InvariantCulture, "{0} {1}", length.ToString(new CultureInfo("en-US", false).NumberFormat), dimensionName));
                         writer.WriteElementString("g", "shipping_width", googleBaseNamespace, string.Format(CultureInfo.InvariantCulture, "{0} {1}", width.ToString(new CultureInfo("en-US", false).NumberFormat), dimensionName));
