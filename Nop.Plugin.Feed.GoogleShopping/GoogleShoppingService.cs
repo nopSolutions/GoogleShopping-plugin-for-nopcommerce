@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -14,6 +15,7 @@ using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Stores;
+using Nop.Core.Domain.Tasks;
 using Nop.Core.Infrastructure;
 using Nop.Plugin.Feed.GoogleShopping.Services;
 using Nop.Services.Catalog;
@@ -24,6 +26,7 @@ using Nop.Services.Localization;
 using Nop.Services.Media;
 using Nop.Services.Plugins;
 using Nop.Services.Seo;
+using Nop.Services.Tasks;
 using Nop.Services.Tax;
 
 namespace Nop.Plugin.Feed.GoogleShopping
@@ -55,8 +58,9 @@ namespace Nop.Plugin.Feed.GoogleShopping
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IWorkContext _workContext;
         private readonly MeasureSettings _measureSettings;
+        private readonly IScheduleTaskService _scheduleTaskService;
 
-        #endregion
+        #endregion Fields
 
         #region Ctor
 
@@ -83,8 +87,8 @@ namespace Nop.Plugin.Feed.GoogleShopping
             IWebHelper webHelper,
             IWebHostEnvironment webHostEnvironment,
             IWorkContext workContext,
-            MeasureSettings measureSettings
-            )
+            MeasureSettings measureSettings,
+            IScheduleTaskService scheduleTaskService)
         {
             _actionContextAccessor = actionContextAccessor;
             _categoryService = categoryService;
@@ -109,11 +113,13 @@ namespace Nop.Plugin.Feed.GoogleShopping
             _webHelper = webHelper;
             _webHostEnvironment = webHostEnvironment;
             _workContext = workContext;
+            _scheduleTaskService = scheduleTaskService;
         }
 
-        #endregion
+        #endregion Ctor
 
         #region Utilities
+
         /// <summary>
         /// Removes invalid characters
         /// </summary>
@@ -125,9 +131,9 @@ namespace Nop.Plugin.Feed.GoogleShopping
             if (string.IsNullOrWhiteSpace(input))
                 return input;
 
-            //Microsoft uses a proprietary encoding (called CP-1252) for the bullet symbol and some other special characters, 
-            //whereas most websites and data feeds use UTF-8. When you copy-paste from a Microsoft product into a website, 
-            //some characters may appear as junk. Our system generates data feeds in the UTF-8 character encoding, 
+            //Microsoft uses a proprietary encoding (called CP-1252) for the bullet symbol and some other special characters,
+            //whereas most websites and data feeds use UTF-8. When you copy-paste from a Microsoft product into a website,
+            //some characters may appear as junk. Our system generates data feeds in the UTF-8 character encoding,
             //which many shopping engines now require.
 
             //http://www.atensoftware.com/p90.php?q=182
@@ -146,7 +152,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
             //input = input.Replace("™", "");
             //input = input.Replace("®", "");
             //input = input.Replace("°", "");
-            
+
             if (isHtmlEncoded)
                 input = WebUtility.HtmlEncode(input);
 
@@ -178,7 +184,8 @@ namespace Nop.Plugin.Feed.GoogleShopping
         {
             return _storeContext.CurrentStore.SslEnabled ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
         }
-        #endregion
+
+        #endregion Utilities
 
         #region Methods
 
@@ -253,6 +260,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                             productsToProcess.Add(product1);
                         }
                         break;
+
                     case ProductType.GroupedProduct:
                         {
                             //grouped products could have several child products
@@ -260,6 +268,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                             productsToProcess.AddRange(associatedProducts);
                         }
                         break;
+
                     default:
                         continue;
                 }
@@ -367,7 +376,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
 
                     writer.WriteElementString("g", "expiration_date", googleBaseNamespace, DateTime.Now.AddDays(googleShoppingSettings.ExpirationNumberOfDays).ToString("yyyy-MM-dd"));
 
-                    #endregion
+                    #endregion Basic Product Information
 
                     #region Availability & Price
 
@@ -381,7 +390,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     }
                     //uncomment th code below in order to support "preorder" value for "availability"
                     //if (product.AvailableForPreOrder &&
-                    //    (!product.PreOrderAvailabilityStartDateTimeUtc.HasValue || 
+                    //    (!product.PreOrderAvailabilityStartDateTimeUtc.HasValue ||
                     //    product.PreOrderAvailabilityStartDateTimeUtc.Value >= DateTime.UtcNow))
                     //{
                     //    availability = "preorder";
@@ -416,7 +425,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                                               price.ToString(new CultureInfo("en-US", false).NumberFormat) + " " +
                                               currency.CurrencyCode);
 
-                    #endregion
+                    #endregion Availability & Price
 
                     #region Unique Product Identifiers
 
@@ -458,7 +467,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         writer.WriteElementString("g", "identifier_exists", googleBaseNamespace, "FALSE");
                     }
 
-                    #endregion
+                    #endregion Unique Product Identifiers
 
                     #region Apparel Products
 
@@ -498,7 +507,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         writer.WriteFullEndElement(); // g:size
                     }
 
-                    #endregion
+                    #endregion Apparel Products
 
                     #region Tax & Shipping
 
@@ -539,14 +548,14 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         {
                             "inches" => "in",
                             "centimeters" => "cm",
-                            _ => throw new Exception("Not supported dimension. Google accepts the following units: in, cm. To add dimensions automatically, you must change the default size system name to 'inches' or 'centimeters'. Configuration-> Shipping-> Measures "), 
+                            _ => throw new Exception("Not supported dimension. Google accepts the following units: in, cm. To add dimensions automatically, you must change the default size system name to 'inches' or 'centimeters'. Configuration-> Shipping-> Measures "),
                         };
                         writer.WriteElementString("g", "shipping_length", googleBaseNamespace, string.Format(CultureInfo.InvariantCulture, "{0} {1}", length.ToString(new CultureInfo("en-US", false).NumberFormat), dimensionName));
                         writer.WriteElementString("g", "shipping_width", googleBaseNamespace, string.Format(CultureInfo.InvariantCulture, "{0} {1}", width.ToString(new CultureInfo("en-US", false).NumberFormat), dimensionName));
                         writer.WriteElementString("g", "shipping_height", googleBaseNamespace, string.Format(CultureInfo.InvariantCulture, "{0} {1}", height.ToString(new CultureInfo("en-US", false).NumberFormat), dimensionName));
                     }
 
-                    #endregion
+                    #endregion Tax & Shipping
 
                     writer.WriteEndElement(); // item
                 }
@@ -563,7 +572,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
         public override void Install()
         {
             //settings
-            var settings = new GoogleShoppingSettings
+            _settingService.SaveSetting(new GoogleShoppingSettings
             {
                 PricesConsiderPromotions = false,
                 ProductPictureSize = 125,
@@ -571,8 +580,18 @@ namespace Nop.Plugin.Feed.GoogleShopping
                 PassShippingInfoDimensions = false,
                 StaticFileName = $"googleshopping_{CommonHelper.GenerateRandomDigitCode(10)}.xml",
                 ExpirationNumberOfDays = 28
-            };
-            _settingService.SaveSetting(settings);
+            });
+
+            //generate feed task
+            if (_scheduleTaskService.GetTaskByType(GoogleShoppingDefaults.GenerateFeedTask) == null)
+            {
+                _scheduleTaskService.InsertTask(new ScheduleTask
+                {
+                    Type = GoogleShoppingDefaults.GenerateFeedTask,
+                    Name = GoogleShoppingDefaults.GenerateFeedTaskName,
+                    Seconds = GoogleShoppingDefaults.DefaultGenerateFeedPeriod * 60 * 60
+                });
+            }
 
             //locales
             _localizationService.AddPluginLocaleResource(new Dictionary<string, string>
@@ -627,11 +646,16 @@ namespace Nop.Plugin.Feed.GoogleShopping
             _settingService.DeleteSetting<GoogleShoppingSettings>();
 
             //locales
-            _localizationService.DeletePluginLocaleResources("Plugins.Feed.GoogleShopping");            
+            _localizationService.DeletePluginLocaleResources("Plugins.Feed.GoogleShopping");
+
+            //generate feed task
+            var task = _scheduleTaskService.GetTaskByType(GoogleShoppingDefaults.GenerateFeedTask);
+            if (task != null)
+                _scheduleTaskService.DeleteTask(task);
 
             base.Uninstall();
         }
-        
+
         /// <summary>
         /// Generate a static feed file
         /// </summary>
@@ -640,12 +664,12 @@ namespace Nop.Plugin.Feed.GoogleShopping
         {
             if (store == null)
                 throw new ArgumentNullException(nameof(store));
-            
+
             var filePath = _nopFileProvider.Combine(_webHostEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + _googleShoppingSettings.StaticFileName);
             using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
             GenerateFeed(fs, store);
         }
 
-        #endregion
+        #endregion Methods
     }
 }

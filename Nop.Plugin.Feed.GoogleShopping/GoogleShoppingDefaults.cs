@@ -15,5 +15,20 @@ namespace Nop.Plugin.Feed.GoogleShopping
         /// Generic attribute name to hide product settings block on the plugin configuration page
         /// </summary>
         public static string HideProductSettingsBlock = "GoogleShoppingPage.HideProductSettingsBlock";
+
+        /// <summary>
+        /// Name of the generate feed task
+        /// </summary>
+        public static string GenerateFeedTaskName => "Google Shopping Generate Feed";
+
+        /// <summary>
+        /// Type of the generate feed task
+        /// </summary>
+        public static string GenerateFeedTask => "Nop.Plugin.Feed.GoogleShopping.Services.GenerateFeedTask";
+
+        /// <summary>
+        /// Default synchronization period in hours
+        /// </summary>
+        public static int DefaultGenerateFeedPeriod => 24;
     }
 }
