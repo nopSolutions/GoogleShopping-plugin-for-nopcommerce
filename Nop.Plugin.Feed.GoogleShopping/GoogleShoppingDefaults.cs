@@ -24,7 +24,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
         /// <summary>
         /// Type of the generate feed task
         /// </summary>
-        public static string GenerateFeedTask => "Nop.Plugin.Feed.GoogleShopping.Services.GenerateFeedTask";
+        public static string GenerateFeedTask => "Nop.Plugin.Feed.GoogleShopping.Services.GenerateFeedTask, Nop.Plugin.Feed.GoogleShopping";
 
         /// <summary>
         /// Default synchronization period in hours
