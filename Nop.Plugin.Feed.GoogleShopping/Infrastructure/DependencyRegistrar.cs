@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Nop.Core.Configuration;
 using Nop.Core.Infrastructure;
 using Nop.Core.Infrastructure.DependencyManagement;
@@ -16,10 +16,10 @@ namespace Nop.Plugin.Feed.GoogleShopping.Infrastructure
         /// </summary>
         /// <param name="builder">Container builder</param>
         /// <param name="typeFinder">Type finder</param>
-        /// <param name="config">Config</param>
-        public virtual void Register(ContainerBuilder builder, ITypeFinder typeFinder, NopConfig config)
+        /// <param name="appsettings">Config</param>
+        public virtual void Register(IServiceCollection services, ITypeFinder typeFinder, AppSettings appsettings)
         {
-            builder.RegisterType<GoogleService>().As<IGoogleService>().InstancePerLifetimeScope();
+            services.AddScoped<GoogleService>();
         }
 
         /// <summary>

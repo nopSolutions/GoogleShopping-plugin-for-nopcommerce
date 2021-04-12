@@ -2,7 +2,7 @@
 
 namespace Nop.Plugin.Feed.GoogleShopping.Models
 {
-    public class GeneratedFileModel : BaseNopModel
+    public record GeneratedFileModel : BaseNopModel
     {
         public string StoreName { get; set; }
         public string FileUrl { get; set; }

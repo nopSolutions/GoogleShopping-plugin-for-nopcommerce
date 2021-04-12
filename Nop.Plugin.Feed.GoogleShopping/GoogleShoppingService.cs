@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -153,11 +154,11 @@ namespace Nop.Plugin.Feed.GoogleShopping
             return input;
         }
 
-        protected virtual Currency GetUsedCurrency()
+        protected virtual async Task<Currency> GetUsedCurrencyAsync()
         {
-            var currency = _currencyService.GetCurrencyById(_googleShoppingSettings.CurrencyId);
+            var currency = await _currencyService.GetCurrencyByIdAsync(_googleShoppingSettings.CurrencyId);
             if (currency == null || !currency.Published)
-                currency = _currencyService.GetCurrencyById(_currencySettings.PrimaryStoreCurrencyId);
+                currency = await _currencyService.GetCurrencyByIdAsync(_currencySettings.PrimaryStoreCurrencyId);
             return currency;
         }
 
@@ -174,9 +175,9 @@ namespace Nop.Plugin.Feed.GoogleShopping
         /// Get HTTP protocol
         /// </summary>
         /// <returns>Protocol name as string</returns>
-        protected virtual string GetHttpProtocol()
+        protected virtual async Task<string> GetHttpProtocolAsync()
         {
-            return _storeContext.CurrentStore.SslEnabled ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
+            return (await _storeContext.GetCurrentStoreAsync()).SslEnabled ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
         }
         #endregion
 
@@ -196,7 +197,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
         /// <param name="stream">Stream</param>
         /// <param name="store">Store</param>
         /// <returns>Generated feed</returns>
-        public void GenerateFeed(Stream stream, Store store)
+        public async Task GenerateFeed(Stream stream, Store store)
         {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
@@ -211,11 +212,11 @@ namespace Nop.Plugin.Feed.GoogleShopping
                 Encoding = Encoding.UTF8
             };
 
-            var googleShoppingSettings = _settingService.LoadSetting<GoogleShoppingSettings>(store.Id);
+            var googleShoppingSettings = await _settingService.LoadSettingAsync<GoogleShoppingSettings>(store.Id);
 
             //language
             var languageId = 0;
-            var languages = _languageService.GetAllLanguages(storeId: store.Id);
+            var languages = await _languageService.GetAllLanguagesAsync(storeId: store.Id);
             //if we have only one language, let's use it
             if (languages.Count == 1)
             {
@@ -225,10 +226,10 @@ namespace Nop.Plugin.Feed.GoogleShopping
             }
             //otherwise, use the current one
             if (languageId == 0)
-                languageId = _workContext.WorkingLanguage.Id;
+                languageId = (await _workContext.GetWorkingLanguageAsync()).Id;
 
             //we load all Google products here using one SQL request (performance optimization)
-            var allGoogleProducts = _googleService.GetAll();
+            var allGoogleProducts = await _googleService.GetAllAsync();
 
             using var writer = XmlWriter.Create(stream, settings);
             //Generate feed according to the following specs: http://www.google.com/support/merchants/bin/answer.py?answer=188494&expand=GB
@@ -241,7 +242,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
             writer.WriteElementString("link", "http://base.google.com/base/");
             writer.WriteElementString("description", "Information about products");
 
-            var products1 = _productService.SearchProducts(storeId: store.Id, visibleIndividuallyOnly: true);
+            var products1 = await _productService.SearchProductsAsync(storeId: store.Id, visibleIndividuallyOnly: true);
             foreach (var product1 in products1)
             {
                 var productsToProcess = new List<Product>();
@@ -256,7 +257,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     case ProductType.GroupedProduct:
                         {
                             //grouped products could have several child products
-                            var associatedProducts = _productService.GetAssociatedProducts(product1.Id, store.Id);
+                            var associatedProducts = await _productService.GetAssociatedProductsAsync(product1.Id, store.Id);
                             productsToProcess.AddRange(associatedProducts);
                         }
                         break;
@@ -274,7 +275,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
 
                     //title [title] - Title of the item
                     writer.WriteStartElement("title");
-                    var title = _localizationService.GetLocalized(product, x => x.Name, languageId);
+                    var title = await _localizationService.GetLocalizedAsync(product, x => x.Name, languageId);
                     //title should be not longer than 70 characters
                     if (title.Length > 70)
                         title = title.Substring(0, 70);
@@ -283,11 +284,11 @@ namespace Nop.Plugin.Feed.GoogleShopping
 
                     //description [description] - Description of the item
                     writer.WriteStartElement("description");
-                    var description = _localizationService.GetLocalized(product, x => x.FullDescription, languageId);
+                    var description = await _localizationService.GetLocalizedAsync(product, x => x.FullDescription, languageId);
                     if (string.IsNullOrEmpty(description))
-                        description = _localizationService.GetLocalized(product, x => x.ShortDescription, languageId);
+                        description = await _localizationService.GetLocalizedAsync(product, x => x.ShortDescription, languageId);
                     if (string.IsNullOrEmpty(description))
-                        description = _localizationService.GetLocalized(product, x => x.Name, languageId); //description is required
+                        description = await _localizationService.GetLocalizedAsync(product, x => x.Name, languageId); //description is required
                                                                                                            //resolving character encoding issues in your data feed
                     description = StripInvalidChars(description, true);
                     writer.WriteCData(description);
@@ -309,14 +310,14 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     writer.WriteFullEndElement(); // g:google_product_category
 
                     //product type [product_type] - Your category of the item
-                    var defaultProductCategory = _categoryService
-                        .GetProductCategoriesByProductId(product.Id, store.Id)
+                    var defaultProductCategory = (await _categoryService
+                        .GetProductCategoriesByProductIdAsync(product.Id))
                         .FirstOrDefault();
                     if (defaultProductCategory != null)
                     {
                         //TODO localize categories
-                        var category = _categoryService.GetFormattedBreadCrumb(
-                            category: _categoryService.GetCategoryById(defaultProductCategory.CategoryId),
+                        var category = await _categoryService.GetFormattedBreadCrumbAsync(
+                            category: await _categoryService.GetCategoryByIdAsync(defaultProductCategory.CategoryId),
                             separator: ">",
                             languageId: languageId);
                         if (!string.IsNullOrEmpty(category))
@@ -328,7 +329,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     }
 
                     //link [link] - URL directly linking to your item's page on your website
-                    var productUrl = GetUrlHelper().RouteUrl("Product", new { SeName = _urlRecordService.GetSeName(product) }, GetHttpProtocol());
+                    var productUrl = GetUrlHelper().RouteUrl("Product", new { SeName = await _urlRecordService.GetSeNameAsync(product) }, await GetHttpProtocolAsync());
                     writer.WriteElementString("link", productUrl);
 
                     //image link [image_link] - URL of an image of the item
@@ -336,11 +337,11 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     //up to 10 pictures
                     const int maximumPictures = 10;
                     var storeLocation = _webHelper.GetStoreLocation();
-                    var pictures = _pictureService.GetPicturesByProductId(product.Id, maximumPictures);
+                    var pictures = await _pictureService.GetPicturesByProductIdAsync(product.Id, maximumPictures);
                     for (var i = 0; i < pictures.Count; i++)
                     {
                         var picture = pictures[i];
-                        var imageUrl = _pictureService.GetPictureUrl(picture.Id,
+                        var imageUrl = await _pictureService.GetPictureUrlAsync(picture.Id,
                             googleShoppingSettings.ProductPictureSize,
                             storeLocation: storeLocation);
 
@@ -358,7 +359,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     if (!pictures.Any())
                     {
                         //no picture? submit a default one
-                        var imageUrl = _pictureService.GetDefaultPictureUrl(googleShoppingSettings.ProductPictureSize, storeLocation: storeLocation);
+                        var imageUrl = await _pictureService.GetDefaultPictureUrlAsync(googleShoppingSettings.ProductPictureSize, storeLocation: storeLocation);
                         writer.WriteElementString("g", "image_link", googleBaseNamespace, imageUrl);
                     }
 
@@ -375,7 +376,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     var availability = "in stock"; //in stock by default
                     if (product.ManageInventoryMethod == ManageInventoryMethod.ManageStock
                         && product.BackorderMode == BackorderMode.NoBackorders
-                        && _productService.GetTotalStockQuantity(product) <= 0)
+                        && await _productService.GetTotalStockQuantityAsync(product) <= 0)
                     {
                         availability = "out of stock";
                     }
@@ -389,28 +390,28 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     writer.WriteElementString("g", "availability", googleBaseNamespace, availability);
 
                     //price [price] - Price of the item
-                    var currency = GetUsedCurrency();
+                    var currency = await GetUsedCurrencyAsync();
                     decimal finalPriceBase;
                     if (googleShoppingSettings.PricesConsiderPromotions)
                     {
-                        var minPossiblePrice = _priceCalculationService.GetFinalPrice(product, _workContext.CurrentCustomer);
+                        var (minPossiblePrice, _, _, _) = await _priceCalculationService.GetFinalPriceAsync(product, await _workContext.GetCurrentCustomerAsync());
 
                         if (product.HasTierPrices)
                         {
+                            var (minPriceMaxQuantity, _, _, _) = await _priceCalculationService.GetFinalPriceAsync(product, await _workContext.GetCurrentCustomerAsync(), quantity: int.MaxValue);
                             //calculate price for the maximum quantity if we have tier prices, and choose minimal
-                            minPossiblePrice = Math.Min(minPossiblePrice,
-                                _priceCalculationService.GetFinalPrice(product, _workContext.CurrentCustomer, quantity: int.MaxValue));
+                            minPossiblePrice = Math.Min(minPossiblePrice, minPriceMaxQuantity);
                         }
 
-                        finalPriceBase = _taxService.GetProductPrice(product, minPossiblePrice, out var _);
+                        finalPriceBase = (await _taxService.GetProductPriceAsync(product, minPossiblePrice)).price;
                     }
                     else
                     {
                         finalPriceBase = product.Price;
                     }
-                    var price = _currencyService.ConvertFromPrimaryStoreCurrency(finalPriceBase, currency);
+                    var price = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(finalPriceBase, currency);
                     //round price now so it matches the product details page
-                    price = _priceCalculationService.RoundPrice(price);
+                    price = await _priceCalculationService.RoundPriceAsync(price);
 
                     writer.WriteElementString("g", "price", googleBaseNamespace,
                                               price.ToString(new CultureInfo("en-US", false).NumberFormat) + " " +
@@ -435,11 +436,11 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     }
 
                     //brand [brand] - Brand of the item
-                    var defaultManufacturer = _manufacturerService.GetProductManufacturersByProductId(product.Id).FirstOrDefault();
+                    var defaultManufacturer = (await _manufacturerService.GetProductManufacturersByProductIdAsync(product.Id)).FirstOrDefault();
                     if (defaultManufacturer != null)
                     {
                         writer.WriteStartElement("g", "brand", googleBaseNamespace);
-                        writer.WriteCData(_manufacturerService.GetManufacturerById(defaultManufacturer.ManufacturerId)?.Name);
+                        writer.WriteCData((await _manufacturerService.GetManufacturerByIdAsync(defaultManufacturer.ManufacturerId))?.Name);
                         writer.WriteFullEndElement(); // g:brand
                     }
 
@@ -513,7 +514,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     if (googleShoppingSettings.PassShippingInfoWeight)
                     {
                         var shippingWeight = product.Weight;
-                        var weightSystemName = _measureService.GetMeasureWeightById(_measureSettings.BaseWeightId).SystemKeyword;
+                        var weightSystemName = (await _measureService.GetMeasureWeightByIdAsync(_measureSettings.BaseWeightId)).SystemKeyword;
                         var weightName = weightSystemName switch
                         {
                             "ounce" => "oz",
@@ -534,7 +535,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                         var length = product.Length;
                         var width = product.Width;
                         var height = product.Height;
-                        var dimensionSystemName = _measureService.GetMeasureDimensionById(_measureSettings.BaseDimensionId).SystemKeyword;
+                        var dimensionSystemName = (await _measureService.GetMeasureDimensionByIdAsync(_measureSettings.BaseDimensionId)).SystemKeyword;
                         var dimensionName = dimensionSystemName switch
                         {
                             "inches" => "in",
@@ -560,7 +561,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
         /// <summary>
         /// Install plugin
         /// </summary>
-        public override void Install()
+        public override async Task InstallAsync()
         {
             //settings
             var settings = new GoogleShoppingSettings
@@ -572,10 +573,10 @@ namespace Nop.Plugin.Feed.GoogleShopping
                 StaticFileName = $"googleshopping_{CommonHelper.GenerateRandomDigitCode(10)}.xml",
                 ExpirationNumberOfDays = 28
             };
-            _settingService.SaveSetting(settings);
+            await _settingService.SaveSettingAsync(settings);
 
             //locales
-            _localizationService.AddPluginLocaleResource(new Dictionary<string, string>
+            await _localizationService.AddLocaleResourceAsync(new Dictionary<string, string>
             {
                 ["Plugins.Feed.GoogleShopping.Store"] = "Store",
                 ["Plugins.Feed.GoogleShopping.Store.Hint"] = "Select the store that will be used to generate the feed.",
@@ -615,35 +616,35 @@ namespace Nop.Plugin.Feed.GoogleShopping
                 ["Plugins.Feed.GoogleShopping.StaticFilePath"] = "Generated file path (static)",
                 ["Plugins.Feed.GoogleShopping.StaticFilePath.Hint"] = "A file path of the generated file. It's static for your store and can be shared with the Google Shopping service."
             });
-            base.Install();
+            await base.InstallAsync();
         }
 
         /// <summary>
         /// Uninstall plugin
         /// </summary>
-        public override void Uninstall()
+        public override async Task UninstallAsync()
         {
             //settings
-            _settingService.DeleteSetting<GoogleShoppingSettings>();
+            await _settingService.DeleteSettingAsync<GoogleShoppingSettings>();
 
             //locales
-            _localizationService.DeletePluginLocaleResources("Plugins.Feed.GoogleShopping");            
+            await _localizationService.DeleteLocaleResourcesAsync("Plugins.Feed.GoogleShopping");
 
-            base.Uninstall();
+            await base.UninstallAsync();
         }
         
         /// <summary>
         /// Generate a static feed file
         /// </summary>
         /// <param name="store">Store</param>
-        public virtual void GenerateStaticFile(Store store)
+        public virtual async Task GenerateStaticFile(Store store)
         {
             if (store == null)
                 throw new ArgumentNullException(nameof(store));
             
             var filePath = _nopFileProvider.Combine(_webHostEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + _googleShoppingSettings.StaticFileName);
             using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-            GenerateFeed(fs, store);
+            await GenerateFeed(fs, store);
         }
 
         #endregion

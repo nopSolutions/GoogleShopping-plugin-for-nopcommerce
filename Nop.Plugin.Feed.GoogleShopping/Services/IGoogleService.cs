@@ -1,22 +1,23 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Nop.Plugin.Feed.GoogleShopping.Domain;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Services
 {
     public partial interface IGoogleService
     {
-        void DeleteGoogleProduct(GoogleProductRecord googleProductRecord);
+        Task DeleteGoogleProductAsync(GoogleProductRecord googleProductRecord);
 
-        IList<GoogleProductRecord> GetAll();
+        Task<IList<GoogleProductRecord>> GetAllAsync();
 
-        GoogleProductRecord GetById(int googleProductRecordId);
+        Task<GoogleProductRecord> GetByIdAsync(int googleProductRecordId);
 
-        GoogleProductRecord GetByProductId(int productId);
+        Task<GoogleProductRecord> GetByProductIdAsync(int productId);
 
-        void InsertGoogleProductRecord(GoogleProductRecord googleProductRecord);
+        Task InsertGoogleProductRecordAsync(GoogleProductRecord googleProductRecord);
 
-        void UpdateGoogleProductRecord(GoogleProductRecord googleProductRecord);
+        Task UpdateGoogleProductRecordAsync(GoogleProductRecord googleProductRecord);
 
-        IList<string> GetTaxonomyList();
+        Task<IList<string>> GetTaxonomyListAsync();
     }
 }
