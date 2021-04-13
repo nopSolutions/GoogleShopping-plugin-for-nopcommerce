@@ -3,7 +3,7 @@ using Nop.Web.Framework.Mvc.ModelBinding;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Models
 {
-    public class GoogleProductModel : BaseNopEntityModel
+    public record GoogleProductModel : BaseNopEntityModel
     {
         #region Ctor
 

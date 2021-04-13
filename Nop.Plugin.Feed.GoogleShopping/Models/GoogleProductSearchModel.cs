@@ -5,7 +5,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Models
     /// <summary>
     /// Represents Google product list search model
     /// </summary>
-    public partial class GoogleProductSearchModel : BaseSearchModel
+    public partial record GoogleProductSearchModel : BaseSearchModel
     {
     }
 }

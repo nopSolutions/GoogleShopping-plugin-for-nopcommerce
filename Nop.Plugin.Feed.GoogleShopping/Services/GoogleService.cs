@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Nop.Data;
 using Nop.Plugin.Feed.GoogleShopping.Domain;
 
@@ -26,45 +27,45 @@ namespace Nop.Plugin.Feed.GoogleShopping.Services
 
         #region Utilities
 
-        private string GetEmbeddedFileContent(string resourceName)
+        private async Task<string> GetEmbeddedFileContentAsync(string resourceName)
         {
             var fullResourceName = $"Nop.Plugin.Feed.GoogleShopping.Files.{resourceName}";
             var assem = GetType().Assembly;
             using var stream = assem.GetManifestResourceStream(fullResourceName);
             using var reader = new StreamReader(stream);
-            return reader.ReadToEnd();
+            return await reader.ReadToEndAsync();
         }
 
         #endregion
 
         #region Methods
 
-        public virtual void DeleteGoogleProduct(GoogleProductRecord googleProductRecord)
+        public virtual async Task DeleteGoogleProductAsync(GoogleProductRecord googleProductRecord)
         {
             if (googleProductRecord == null)
                 throw new ArgumentNullException(nameof(googleProductRecord));
 
-            _gpRepository.Delete(googleProductRecord);
+            await _gpRepository.DeleteAsync(googleProductRecord);
         }
 
-        public virtual IList<GoogleProductRecord> GetAll()
+        public virtual async Task<IList<GoogleProductRecord>> GetAllAsync()
         {
             var query = from gp in _gpRepository.Table
                         orderby gp.Id
                         select gp;
-            var records = query.ToList();
+            var records = await query.ToListAsync();
             return records;
         }
 
-        public virtual GoogleProductRecord GetById(int googleProductRecordId)
+        public virtual async Task<GoogleProductRecord> GetByIdAsync(int googleProductRecordId)
         {
             if (googleProductRecordId == 0)
                 return null;
 
-            return _gpRepository.GetById(googleProductRecordId);
+            return await _gpRepository.GetByIdAsync(googleProductRecordId);
         }
 
-        public virtual GoogleProductRecord GetByProductId(int productId)
+        public virtual async Task<GoogleProductRecord> GetByProductIdAsync(int productId)
         {
             if (productId == 0)
                 return null;
@@ -73,29 +74,29 @@ namespace Nop.Plugin.Feed.GoogleShopping.Services
                         where gp.ProductId == productId
                         orderby gp.Id
                         select gp;
-            var record = query.FirstOrDefault();
+            var record = await query.FirstOrDefaultAsync();
             return record;
         }
 
-        public virtual void InsertGoogleProductRecord(GoogleProductRecord googleProductRecord)
+        public virtual async Task InsertGoogleProductRecordAsync(GoogleProductRecord googleProductRecord)
         {
             if (googleProductRecord == null)
                 throw new ArgumentNullException(nameof(googleProductRecord));
 
-            _gpRepository.Insert(googleProductRecord);
+            await _gpRepository.InsertAsync(googleProductRecord);
         }
 
-        public virtual void UpdateGoogleProductRecord(GoogleProductRecord googleProductRecord)
+        public virtual async Task UpdateGoogleProductRecordAsync(GoogleProductRecord googleProductRecord)
         {
             if (googleProductRecord == null)
                 throw new ArgumentNullException(nameof(googleProductRecord));
 
-            _gpRepository.Update(googleProductRecord);
+            await _gpRepository.UpdateAsync(googleProductRecord);
         }
 
-        public virtual IList<string> GetTaxonomyList()
+        public virtual async Task<IList<string>> GetTaxonomyListAsync()
         {
-            var fileContent = GetEmbeddedFileContent("taxonomy.txt");
+            var fileContent = await GetEmbeddedFileContentAsync("taxonomy.txt");
             if (string.IsNullOrEmpty(fileContent))
                 return new List<string>();
 
