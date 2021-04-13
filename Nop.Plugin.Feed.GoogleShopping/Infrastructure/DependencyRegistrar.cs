@@ -19,7 +19,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Infrastructure
         /// <param name="appsettings">Config</param>
         public virtual void Register(IServiceCollection services, ITypeFinder typeFinder, AppSettings appsettings)
         {
-            services.AddScoped<GoogleService>();
+            services.AddScoped<IGoogleService, GoogleService>();
         }
 
         /// <summary>

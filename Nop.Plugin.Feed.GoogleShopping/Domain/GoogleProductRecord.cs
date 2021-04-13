@@ -1,11 +1,11 @@
-using Nop.Core;
+﻿using Nop.Core;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Domain
 {
     /// <summary>
     /// Represents a Google product record
     /// </summary>
-    public partial class GoogleProductRecord : BaseEntity
+    public class GoogleProductRecord : BaseEntity
     {
         public int ProductId { get; set; }
         public string Taxonomy { get; set; }
