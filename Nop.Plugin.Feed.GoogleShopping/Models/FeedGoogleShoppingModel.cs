@@ -4,7 +4,7 @@ using Nop.Web.Framework.Mvc.ModelBinding;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Models
 {
-    public class FeedGoogleShoppingModel
+    public record FeedGoogleShoppingModel
     {
         public FeedGoogleShoppingModel()
         {
