@@ -220,7 +220,8 @@ namespace Nop.Plugin.Feed.GoogleShopping
 
             var settings = new XmlWriterSettings
             {
-                Encoding = Encoding.UTF8
+                Encoding = Encoding.UTF8,
+                Indent = true
             };
 
             var googleShoppingSettings = await _settingService.LoadSettingAsync<GoogleShoppingSettings>(store.Id);
