@@ -1,28 +1,13 @@
 ﻿using FluentMigrator;
+using Nop.Data.Extensions;
 using Nop.Data.Migrations;
 using Nop.Plugin.Feed.GoogleShopping.Domain;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Data
 {
-    [SkipMigrationOnUpdate]
-    [NopMigration("2020/06/02 12:00:00", "Feed.GoogleShopping base schema")]
+    [NopMigration("2020/06/02 12:00:00", "Feed.GoogleShopping base schema", MigrationProcessType.Installation)]
     public class SchemaMigration : AutoReversingMigration
     {
-        #region Fields
-
-        protected IMigrationManager _migrationManager;
-
-        #endregion
-
-        #region Ctor
-
-        public SchemaMigration(IMigrationManager migrationManager)
-        {
-            _migrationManager = migrationManager;
-        }
-
-        #endregion
-
         #region Methods
 
         /// <summary>
@@ -30,7 +15,7 @@ namespace Nop.Plugin.Feed.GoogleShopping.Data
         /// </summary>
         public override void Up()
         {
-            _migrationManager.BuildTable<GoogleProductRecord>(Create);
+            Create.TableFor<GoogleProductRecord>();
         }
 
         #endregion

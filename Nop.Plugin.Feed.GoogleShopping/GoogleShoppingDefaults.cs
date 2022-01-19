@@ -1,5 +1,4 @@
-﻿
-namespace Nop.Plugin.Feed.GoogleShopping
+﻿namespace Nop.Plugin.Feed.GoogleShopping
 {
     /// <summary>
     /// Represents plugin constants

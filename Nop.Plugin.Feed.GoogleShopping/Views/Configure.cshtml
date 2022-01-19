@@ -4,7 +4,7 @@
 @model FeedGoogleShoppingModel
 @{
     Layout = "_ConfigurePlugin";
-    Html.AddCssFileParts("~/Plugins/Feed.GoogleShopping/Content/styles.css", excludeFromBundle: true);
+    <link rel="stylesheet" href="~/Plugins/Feed.GoogleShopping/Content/styles.css" />
 }
 
 <form asp-controller="FeedGoogleShopping" asp-action="Configure" method="post" id="google-shopping-form">

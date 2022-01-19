@@ -71,31 +71,31 @@
                         Render = new RenderCustom("renderColumnEdit")
                     }
                 }
-       })
+            })
 
             <script>
-                    function renderColumnEdit(data, type, row, meta) {
-                        return '<button onclick=\"javascript:OpenWindow(\'@Url.Content("~/Admin/FeedGoogleShopping/Edit/")' + data + '?btnId=btnRefresh&formId=google-shopping-form\', 800, 450, true); return false;\" class="btn btn-default"><i class="fa fa-pencil"></i>@T("Admin.Common.Edit")</button>';
-                    }
+                function renderColumnEdit(data, type, row, meta) {
+                    return '<button onclick=\"javascript:OpenWindow(\'@Url.Content("~/Admin/FeedGoogleShopping/Edit/")' + data + '?btnId=btnRefresh&formId=google-shopping-form\', 800, 450, true); return false;\" class="btn btn-default"><i class="fa fa-pencil"></i>@T("Admin.Common.Edit")</button>';
+                }
 
-                    @*function renderColumnData(data, type, row, meta) {
-                        var googleCategory = (row.GoogleCategory !== null) ? row.GoogleCategory : '';
-                        var gender = (row.Gender !== null) ? row.Gender : '';
-                        var ageGroup = (row.AgeGroup !== null) ? row.AgeGroup : '';
-                        var color = (row.Color !== null) ? row.Color : '';
-                        var googleSize = (row.GoogleSize !== null) ? row.GoogleSize : '';
+                @*function renderColumnData(data, type, row, meta) {
+                    var googleCategory = (row.GoogleCategory !== null) ? row.GoogleCategory : '';
+                    var gender = (row.Gender !== null) ? row.Gender : '';
+                    var ageGroup = (row.AgeGroup !== null) ? row.AgeGroup : '';
+                    var color = (row.Color !== null) ? row.Color : '';
+                    var googleSize = (row.GoogleSize !== null) ? row.GoogleSize : '';
 
-                        return '<div class="google-info">' +
-                            '<dl>' +
-                                '<dt>@T("Plugins.Feed.GoogleShopping.Products.GoogleCategory"):</dt><dd>' + googleCategory + '</dd>' +
-                                '<dt>@T("Plugins.Feed.GoogleShopping.Products.Gender"):</dt><dd>' + gender + '</dd>' +
-                                '<dt>@T("Plugins.Feed.GoogleShopping.Products.AgeGroup"):</dt><dd>' + ageGroup + '</dd>' +
-                                '<dt>@T("Plugins.Feed.GoogleShopping.Products.Color"):</dt><dd>' + color + '</dd>' +
-                                '<dt>@T("Plugins.Feed.GoogleShopping.Products.Size"):</dt><dd>' + googleSize + '</dd>' +
-                                '<dt>@T("Plugins.Feed.GoogleShopping.Products.CustomGoods"):</dt><dd>' + row.CustomGoods + '</dd>' +
-                            '</dl>' +
-                        '</div>';
-                    }*@
+                    return '<div class="google-info">' +
+                        '<dl>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.GoogleCategory"):</dt><dd>' + googleCategory + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.Gender"):</dt><dd>' + gender + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.AgeGroup"):</dt><dd>' + ageGroup + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.Color"):</dt><dd>' + color + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.Size"):</dt><dd>' + googleSize + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.CustomGoods"):</dt><dd>' + row.CustomGoods + '</dd>' +
+                        '</dl>' +
+                    '</div>';
+                }*@
             </script>
 
             <div class="card-footer">

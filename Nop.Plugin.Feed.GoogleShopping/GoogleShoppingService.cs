@@ -289,7 +289,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     var title = await _localizationService.GetLocalizedAsync(product, x => x.Name, languageId);
                     //title should be not longer than 70 characters
                     if (title.Length > 70)
-                        title = title.Substring(0, 70);
+                        title = title[..70];
                     writer.WriteCData(title);
                     writer.WriteEndElement(); // title
 
@@ -589,7 +589,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
             await _settingService.SaveSettingAsync(settings);
 
             //locales
-            await _localizationService.AddLocaleResourceAsync(new Dictionary<string, string>
+            await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
             {
                 ["Plugins.Feed.GoogleShopping.Store"] = "Store",
                 ["Plugins.Feed.GoogleShopping.Store.Hint"] = "Select the store that will be used to generate the feed.",
