@@ -283,7 +283,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     #region Basic Product Information
 
                     //id [id]- An identifier of the item
-                    writer.WriteElementString("g", "id", googleBaseNamespace, product.Id.ToString());
+                    writer.WriteElementString("g", "id", googleBaseNamespace, product.Sku);
 
                     //title [title] - Title of the item
                     writer.WriteStartElement("title");
@@ -407,13 +407,13 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     if (googleShoppingSettings.PricesConsiderPromotions)
                     {
                         var currentCustomer = await _workContext.GetCurrentCustomerAsync();
-                        var minPossiblePrice = (await _priceCalculationService.GetFinalPriceAsync(product, currentCustomer)).finalPrice;
+                        var minPossiblePrice = (await _priceCalculationService.GetFinalPriceAsync(product, currentCustomer, store)).finalPrice;
 
                         if (product.HasTierPrices)
                         {
                             //calculate price for the maximum quantity if we have tier prices, and choose minimal
                             minPossiblePrice = Math.Min(minPossiblePrice,
-                                (await _priceCalculationService.GetFinalPriceAsync(product, currentCustomer, quantity: int.MaxValue)).finalPrice);
+                                (await _priceCalculationService.GetFinalPriceAsync(product, currentCustomer, store, quantity: int.MaxValue)).finalPrice);
                         }
 
                         finalPriceBase = (await _taxService.GetProductPriceAsync(product, minPossiblePrice)).price;
