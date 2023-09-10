@@ -26,6 +26,7 @@ using Nop.Services.Media;
 using Nop.Services.Plugins;
 using Nop.Services.Seo;
 using Nop.Services.Tax;
+using Nop.Web.Framework.Mvc.Routing;
 
 namespace Nop.Plugin.Feed.GoogleShopping
 {
@@ -341,7 +342,7 @@ namespace Nop.Plugin.Feed.GoogleShopping
                     }
 
                     //link [link] - URL directly linking to your item's page on your website
-                    var productUrl = GetUrlHelper().RouteUrl("Product", new { SeName = await _urlRecordService.GetSeNameAsync(product) }, await GetHttpProtocolAsync());
+                    var productUrl = GetUrlHelper().RouteUrl<Product>(new { SeName = await _urlRecordService.GetSeNameAsync(product) }, await GetHttpProtocolAsync());
                     writer.WriteElementString("link", productUrl);
 
                     //image link [image_link] - URL of an image of the item
