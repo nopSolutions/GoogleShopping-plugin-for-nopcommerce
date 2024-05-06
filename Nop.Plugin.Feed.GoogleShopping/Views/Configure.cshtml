@@ -1,7 +1,5 @@
-﻿@using Nop.Plugin.Feed.GoogleShopping;
-@using Nop.Plugin.Feed.GoogleShopping.Models;
+﻿@model FeedGoogleShoppingModel
 
-@model FeedGoogleShoppingModel
 @{
     Layout = "_ConfigurePlugin";
     <link rel="stylesheet" href="~/Plugins/Feed.GoogleShopping/Content/styles.css" />
@@ -12,7 +10,7 @@
         <nop-card asp-name="googlebase-general" asp-icon="fa fa-info" asp-title="@T("Plugins.Feed.GoogleShopping.General")" asp-hide-block-attribute-name="@GoogleShoppingDefaults.HideGeneralBlock" asp-hide="@Model.HideGeneralBlock" asp-advanced="false">
             @await Html.PartialAsync("~/Plugins/Feed.GoogleShopping/Views/_Configure.General.cshtml", Model)
         </nop-card>
-        <nop-card asp-name="googlebase-override" asp-icon="fa fa-exchange" asp-title="@T("Plugins.Feed.GoogleShopping.Override")" asp-hide-block-attribute-name="@GoogleShoppingDefaults.HideProductSettingsBlock" asp-hide="@Model.HideProductSettingsBlock">
+        <nop-card asp-name="googlebase-override" asp-icon="fas fa-exchange-alt" asp-title="@T("Plugins.Feed.GoogleShopping.Override")" asp-hide-block-attribute-name="@GoogleShoppingDefaults.HideProductSettingsBlock" asp-hide="@Model.HideProductSettingsBlock">
             @await Html.PartialAsync("~/Plugins/Feed.GoogleShopping/Views/_Configure.Override.cshtml", Model)
         </nop-card>
     </nop-cards>

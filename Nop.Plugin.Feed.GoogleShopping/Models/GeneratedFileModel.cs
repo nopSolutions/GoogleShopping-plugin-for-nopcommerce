@@ -1,10 +1,9 @@
 ﻿using Nop.Web.Framework.Models;
 
-namespace Nop.Plugin.Feed.GoogleShopping.Models
+namespace Nop.Plugin.Feed.GoogleShopping.Models;
+
+public record GeneratedFileModel : BaseNopModel
 {
-    public record GeneratedFileModel : BaseNopModel
-    {
-        public string StoreName { get; set; }
-        public string FileUrl { get; set; }
-    }
+    public string StoreName { get; set; }
+    public string FileUrl { get; set; }
 }

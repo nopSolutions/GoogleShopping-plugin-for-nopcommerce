@@ -1,12 +1,4 @@
-﻿@using Nop.Core.Domain.Common
-@using Nop.Plugin.Feed.GoogleShopping.Models
-@model Nop.Plugin.Feed.GoogleShopping.Models.FeedGoogleShoppingModel
-@inject AdminAreaSettings adminAreaSettings
-
-@{
-    var defaultGridPageSize = adminAreaSettings.DefaultGridPageSize;
-    var gridPageSizes = adminAreaSettings.GridPageSizes;
-}
+﻿@model FeedGoogleShoppingModel
 
 <div class="card-body">
     <div class="card card-default">
@@ -75,7 +67,7 @@
 
             <script>
                 function renderColumnEdit(data, type, row, meta) {
-                    return '<button onclick=\"javascript:OpenWindow(\'@Url.Content("~/Admin/FeedGoogleShopping/Edit/")' + data + '?btnId=btnRefresh&formId=google-shopping-form\', 800, 450, true); return false;\" class="btn btn-default"><i class="fa fa-pencil"></i>@T("Admin.Common.Edit")</button>';
+                    return '<button onclick=\"javascript:OpenWindow(\'@Url.Content("~/Admin/FeedGoogleShopping/Edit/")' + data + '?btnId=btnRefresh&formId=google-shopping-form\', 800, 460, true); return false;\" class="btn btn-default"><i class="fa fa-pencil"></i>@T("Admin.Common.Edit")</button>';
                 }
 
                 @*function renderColumnData(data, type, row, meta) {
@@ -103,7 +95,7 @@
             </div>
 
             <script>
-                $(document).ready(function () {
+                $(function () {
                     $('#btnRefresh').click(function () {
                         //refresh grid
                         updateTable('#products-grid');

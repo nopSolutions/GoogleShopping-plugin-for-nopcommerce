@@ -1,8 +1,7 @@
-﻿@model Nop.Plugin.Feed.GoogleShopping.Models.FeedGoogleShoppingModel
-
-@await Component.InvokeAsync("StoreScopeConfiguration")
+﻿@model FeedGoogleShoppingModel
 
 <div class="card-body">
+    @await Component.InvokeAsync(typeof(StoreScopeConfigurationViewComponent))
     <div class="card card-default">
         <div class="card-body">
             @T("Plugins.Feed.GoogleShopping.GeneralInstructions")
@@ -90,8 +89,8 @@
                     &nbsp;
                 </div>
                 <div class="col-md-9">
-                    <input type="submit" name="save" class="btn bg-blue" value="@T("Admin.Common.Save")" />
-                    <input type="submit" name="generate" class="btn bg-green" value="@T("Plugins.Feed.GoogleShopping.Generate")" />
+                    <button type="submit" name="save" class="btn btn-primary"><i class="far fa-save"></i>@T("Admin.Common.Save")</button>
+                    <button type="submit" name="generate" class="btn btn-success">@T("Plugins.Feed.GoogleShopping.Generate")</button>
                 </div>
             </div>
         </div>
