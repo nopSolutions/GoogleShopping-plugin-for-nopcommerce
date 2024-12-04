@@ -37,7 +37,6 @@ public class FeedGoogleShoppingController : BasePluginController
     private readonly INopFileProvider _nopFileProvider;
     private readonly INotificationService _notificationService;
     private readonly ILogger _logger;
-    private readonly IPermissionService _permissionService;
     private readonly IPluginService _pluginService;
     private readonly IProductService _productService;
     private readonly ISettingService _settingService;
@@ -58,7 +57,6 @@ public class FeedGoogleShoppingController : BasePluginController
         INopFileProvider nopFileProvider,
         INotificationService notificationService,
         ILogger logger,
-        IPermissionService permissionService,
         IPluginService pluginService,
         IProductService productService,
         ISettingService settingService,
@@ -75,7 +73,6 @@ public class FeedGoogleShoppingController : BasePluginController
         _nopFileProvider = nopFileProvider;
         _notificationService = notificationService;
         _logger = logger;
-        _permissionService = permissionService;
         _pluginService = pluginService;
         _productService = productService;
         _settingService = settingService;
@@ -96,9 +93,6 @@ public class FeedGoogleShoppingController : BasePluginController
     /// <param name="model">Model</param>
     private async Task PrepareModelAsync(FeedGoogleShoppingModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePlugins))
-            return;
-
         //load settings for a chosen store scope
         var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
         var googleShoppingSettings = await _settingService.LoadSettingAsync<GoogleShoppingSettings>(storeScope);
@@ -155,6 +149,7 @@ public class FeedGoogleShoppingController : BasePluginController
 
     [AuthorizeAdmin]
     [Area(AreaNames.ADMIN)]
+    [CheckPermission(StandardPermission.Configuration.MANAGE_PLUGINS)]
     public async Task<IActionResult> Configure()
     {
         var model = new FeedGoogleShoppingModel();
@@ -168,11 +163,9 @@ public class FeedGoogleShoppingController : BasePluginController
     [HttpPost]
     [FormValueRequired("save")]
     [AutoValidateAntiforgeryToken]
+    [CheckPermission(StandardPermission.Configuration.MANAGE_PLUGINS)]
     public async Task<IActionResult> Configure(FeedGoogleShoppingModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePlugins))
-            return AccessDeniedView();
-
         if (!ModelState.IsValid)
         {
             return await Configure();
@@ -214,11 +207,9 @@ public class FeedGoogleShoppingController : BasePluginController
     [HttpPost, ActionName("Configure")]
     [FormValueRequired("generate")]
     [AutoValidateAntiforgeryToken]
+    [CheckPermission(StandardPermission.Configuration.MANAGE_PLUGINS)]
     public async Task<IActionResult> GenerateFeed(FeedGoogleShoppingModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePlugins))
-            return AccessDeniedView();
-
         //load settings for a chosen store scope
         var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
 
@@ -252,6 +243,7 @@ public class FeedGoogleShoppingController : BasePluginController
 
     [HttpPost]
     [AutoValidateAntiforgeryToken]
+    [CheckPermission(StandardPermission.Configuration.MANAGE_PLUGINS)]
     public async Task<IActionResult> GoogleProductList(GoogleProductSearchModel searchModel)
     {
         var storeId = await _storeContext.GetActiveStoreScopeConfigurationAsync();
@@ -288,11 +280,9 @@ public class FeedGoogleShoppingController : BasePluginController
         return Json(model);
     }
 
+    [CheckPermission(StandardPermission.Configuration.MANAGE_PLUGINS)]
     public async Task<IActionResult> Edit(int id)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageShippingSettings))
-            return AccessDeniedView();
-
         var googleProduct = await _googleService.GetByProductIdAsync(id);
 
         var model = new GoogleProductModel
@@ -320,11 +310,9 @@ public class FeedGoogleShoppingController : BasePluginController
 
     [HttpPost]
     [AutoValidateAntiforgeryToken]
+    [CheckPermission(StandardPermission.Configuration.MANAGE_PLUGINS)]
     public async Task<IActionResult> Edit(GoogleProductModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePlugins))
-            return AccessDeniedView();
-
         var googleProduct = await _googleService.GetByProductIdAsync(model.ProductId);
         if (googleProduct != null)
         {

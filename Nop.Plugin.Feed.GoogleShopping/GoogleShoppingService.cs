@@ -222,6 +222,7 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
         //language
         var languageId = 0;
         var languages = await _languageService.GetAllLanguagesAsync(storeId: store.Id);
+
         //if we have only one language, let's use it
         if (languages.Count == 1)
         {
@@ -229,6 +230,7 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
             var language = languages.FirstOrDefault();
             languageId = language != null ? language.Id : 0;
         }
+
         //otherwise, use the current one
         if (languageId == 0)
             languageId = (await _workContext.GetWorkingLanguageAsync()).Id;
@@ -254,21 +256,22 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
             switch (product1.ProductType)
             {
                 case ProductType.SimpleProduct:
-                    {
-                        //simple product doesn't have child products
-                        productsToProcess.Add(product1);
-                    }
-                    break;
+                {
+                    //simple product doesn't have child products
+                    productsToProcess.Add(product1);
+                }
+                break;
                 case ProductType.GroupedProduct:
-                    {
-                        //grouped products could have several child products
-                        var associatedProducts = await _productService.GetAssociatedProductsAsync(product1.Id, store.Id);
-                        productsToProcess.AddRange(associatedProducts);
-                    }
-                    break;
+                {
+                    //grouped products could have several child products
+                    var associatedProducts = await _productService.GetAssociatedProductsAsync(product1.Id, store.Id);
+                    productsToProcess.AddRange(associatedProducts);
+                }
+                break;
                 default:
                     continue;
             }
+
             foreach (var product in productsToProcess)
             {
                 writer.WriteStartElement("item");
@@ -400,14 +403,9 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
                 if (googleShoppingSettings.PricesConsiderPromotions)
                 {
                     var currentCustomer = await _workContext.GetCurrentCustomerAsync();
-                    var minPossiblePrice = (await _priceCalculationService.GetFinalPriceAsync(product, currentCustomer, store)).finalPrice;
 
-                    if (product.HasTierPrices)
-                    {
-                        //calculate price for the maximum quantity if we have tier prices, and choose minimal
-                        minPossiblePrice = Math.Min(minPossiblePrice,
-                            (await _priceCalculationService.GetFinalPriceAsync(product, currentCustomer, store, quantity: int.MaxValue)).finalPrice);
-                    }
+                    //calculate price for the maximum quantity if we have tier prices, and choose minimal
+                    var minPossiblePrice = (await _priceCalculationService.GetFinalPriceAsync(product, currentCustomer, store, quantity: int.MaxValue)).finalPrice;
 
                     finalPriceBase = (await _taxService.GetProductPriceAsync(product, minPossiblePrice)).price;
                 }
@@ -415,6 +413,7 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
                 {
                     finalPriceBase = product.Price;
                 }
+
                 var price = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(finalPriceBase, currency);
                 //round price now so it matches the product details page
                 price = await _priceCalculationService.RoundPriceAsync(price);
