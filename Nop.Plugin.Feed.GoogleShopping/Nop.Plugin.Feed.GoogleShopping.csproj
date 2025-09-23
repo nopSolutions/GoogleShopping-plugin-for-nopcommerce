@@ -19,7 +19,7 @@
   <ItemGroup>
     <None Remove="Content\styles.css" />
     <None Remove="Files\taxonomy.txt" />
-    <None Remove="logo.jpg" />
+    <None Remove="logo.png" />
     <None Remove="plugin.json" />
     <None Remove="Views\Configure.cshtml" />
     <None Remove="Views\Edit.cshtml" />
@@ -45,7 +45,7 @@
     <EmbeddedResource Include="Files\taxonomy.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
-    <Content Include="logo.jpg">
+    <Content Include="logo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Views\Configure.cshtml">
