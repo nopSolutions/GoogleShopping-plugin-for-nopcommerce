@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core;
 using Nop.Core.Domain.Stores;
@@ -30,9 +29,9 @@ public class FeedGoogleShoppingController : BasePluginController
 {
     #region Fields
 
+    private readonly GoogleService _googleService;
     private readonly ICurrencyService _currencyService;
     private readonly IGenericAttributeService _genericAttributeService;
-    private readonly IGoogleService _googleService;
     private readonly ILocalizationService _localizationService;
     private readonly INopFileProvider _nopFileProvider;
     private readonly INotificationService _notificationService;
@@ -42,17 +41,15 @@ public class FeedGoogleShoppingController : BasePluginController
     private readonly ISettingService _settingService;
     private readonly IStoreContext _storeContext;
     private readonly IStoreService _storeService;
-    private readonly IWebHelper _webHelper;
-    private readonly IWebHostEnvironment _webHostEnvironment;
     private readonly IWorkContext _workContext;
 
     #endregion
 
     #region Ctor
 
-    public FeedGoogleShoppingController(ICurrencyService currencyService,
+    public FeedGoogleShoppingController(GoogleService googleService,
+        ICurrencyService currencyService,
         IGenericAttributeService genericAttributeService,
-        IGoogleService googleService,
         ILocalizationService localizationService,
         INopFileProvider nopFileProvider,
         INotificationService notificationService,
@@ -62,13 +59,11 @@ public class FeedGoogleShoppingController : BasePluginController
         ISettingService settingService,
         IStoreContext storeContext,
         IStoreService storeService,
-        IWebHelper webHelper,
-        IWebHostEnvironment webHostEnvironment,
         IWorkContext workContext)
     {
+        _googleService = googleService;
         _currencyService = currencyService;
         _genericAttributeService = genericAttributeService;
-        _googleService = googleService;
         _localizationService = localizationService;
         _nopFileProvider = nopFileProvider;
         _notificationService = notificationService;
@@ -78,8 +73,6 @@ public class FeedGoogleShoppingController : BasePluginController
         _settingService = settingService;
         _storeContext = storeContext;
         _storeService = storeService;
-        _webHelper = webHelper;
-        _webHostEnvironment = webHostEnvironment;
         _workContext = workContext;
     }
 
@@ -122,12 +115,14 @@ public class FeedGoogleShoppingController : BasePluginController
         //file paths
         foreach (var store in await _storeService.GetAllStoresAsync())
         {
-            var localFilePath = _nopFileProvider.Combine(_webHostEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + googleShoppingSettings.StaticFileName);
+            var pathToFile = string.Format(GoogleShoppingDefaults.PathToFeedFile, store.Id, googleShoppingSettings.StaticFileName);
+            var localFilePath = _nopFileProvider.GetAbsolutePath(pathToFile);
+
             if (_nopFileProvider.FileExists(localFilePath))
                 model.GeneratedFiles.Add(new GeneratedFileModel
                 {
                     StoreName = store.Name,
-                    FileUrl = $"{_webHelper.GetStoreLocation(false)}files/exportimport/{store.Id}-{googleShoppingSettings.StaticFileName}"
+                    FileUrl = $"{store.Url}{pathToFile}"
                 });
         }
 

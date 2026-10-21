@@ -18,7 +18,7 @@ public class NopStartup : INopStartup
     /// <param name="configuration">Configuration of the application</param>
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddScoped<IGoogleService, GoogleService>();
+        services.AddScoped<GoogleService>();
     }
 
     /// <summary>

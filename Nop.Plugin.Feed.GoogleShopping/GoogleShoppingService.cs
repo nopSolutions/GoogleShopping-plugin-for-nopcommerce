@@ -1,8 +1,4 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.Routing;
-using Nop.Core;
+﻿using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Stores;
@@ -15,7 +11,6 @@ using Nop.Services.Directory;
 using Nop.Services.Localization;
 using Nop.Services.Media;
 using Nop.Services.Plugins;
-using Nop.Services.Seo;
 using Nop.Services.Tax;
 using Nop.Web.Framework.Mvc.Routing;
 using System.Globalization;
@@ -30,26 +25,21 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
     #region Fields
 
     private readonly CurrencySettings _currencySettings;
+    private readonly GoogleService _googleService;
     private readonly GoogleShoppingSettings _googleShoppingSettings;
-    private readonly IActionContextAccessor _actionContextAccessor;
     private readonly ICategoryService _categoryService;
     private readonly ICurrencyService _currencyService;
-    private readonly IGoogleService _googleService;
     private readonly ILanguageService _languageService;
     private readonly ILocalizationService _localizationService;
     private readonly IManufacturerService _manufacturerService;
     private readonly IMeasureService _measureService;
     private readonly INopFileProvider _nopFileProvider;
+    private readonly INopUrlHelper _nopUrlHelper;
     private readonly IPictureService _pictureService;
     private readonly IPriceCalculationService _priceCalculationService;
     private readonly IProductService _productService;
     private readonly ISettingService _settingService;
-    private readonly IStoreContext _storeContext;
     private readonly ITaxService _taxService;
-    private readonly IUrlHelperFactory _urlHelperFactory;
-    private readonly IUrlRecordService _urlRecordService;
-    private readonly IWebHelper _webHelper;
-    private readonly IWebHostEnvironment _webHostEnvironment;
     private readonly IWorkContext _workContext;
     private readonly MeasureSettings _measureSettings;
 
@@ -57,37 +47,30 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
 
     #region Ctor
 
-    public GoogleShoppingService(
-        CurrencySettings currencySettings,
+    public GoogleShoppingService(CurrencySettings currencySettings,
+        GoogleService googleService,
         GoogleShoppingSettings googleShoppingSettings,
-        IActionContextAccessor actionContextAccessor,
         ICategoryService categoryService,
         ICurrencyService currencyService,
-        IGoogleService googleService,
         ILanguageService languageService,
         ILocalizationService localizationService,
         IManufacturerService manufacturerService,
         IMeasureService measureService,
         INopFileProvider nopFileProvider,
+        INopUrlHelper nopUrlHelper,
         IPictureService pictureService,
         IPriceCalculationService priceCalculationService,
         IProductService productService,
         ISettingService settingService,
-        IStoreContext storeContext,
         ITaxService taxService,
-        IUrlHelperFactory urlHelperFactory,
-        IUrlRecordService urlRecordService,
-        IWebHelper webHelper,
-        IWebHostEnvironment webHostEnvironment,
         IWorkContext workContext,
         MeasureSettings measureSettings
         )
     {
-        _actionContextAccessor = actionContextAccessor;
+        _googleService = googleService;
         _categoryService = categoryService;
         _currencyService = currencyService;
         _currencySettings = currencySettings;
-        _googleService = googleService;
         _googleShoppingSettings = googleShoppingSettings;
         _languageService = languageService;
         _localizationService = localizationService;
@@ -95,16 +78,12 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
         _measureService = measureService;
         _measureSettings = measureSettings;
         _nopFileProvider = nopFileProvider;
+        _nopUrlHelper = nopUrlHelper;
         _pictureService = pictureService;
         _priceCalculationService = priceCalculationService;
         _productService = productService;
         _settingService = settingService;
-        _storeContext = storeContext;
         _taxService = taxService;
-        _urlHelperFactory = urlHelperFactory;
-        _urlRecordService = urlRecordService;
-        _webHelper = webHelper;
-        _webHostEnvironment = webHostEnvironment;
         _workContext = workContext;
     }
 
@@ -166,26 +145,6 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
         return currency;
     }
 
-    /// <summary>
-    /// Get UrlHelper
-    /// </summary>
-    /// <returns>UrlHelper</returns>
-    protected virtual IUrlHelper GetUrlHelper()
-    {
-        return _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext);
-    }
-
-    /// <summary>
-    /// Get HTTP protocol
-    /// </summary>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the Protocol name
-    /// </returns>
-    protected virtual async Task<string> GetHttpProtocolAsync()
-    {
-        return (await _storeContext.GetCurrentStoreAsync()).SslEnabled ? Uri.UriSchemeHttps : Uri.UriSchemeHttp;
-    }
     #endregion
 
     #region Methods
@@ -195,7 +154,7 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
     /// </summary>
     public override string GetConfigurationPageUrl()
     {
-        return $"{_webHelper.GetStoreLocation()}Admin/FeedGoogleShopping/Configure";
+        return _nopUrlHelper.RouteUrl(GoogleShoppingDefaults.ConfigurationRouteName);
     }
 
     /// <summary>
@@ -256,18 +215,18 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
             switch (product1.ProductType)
             {
                 case ProductType.SimpleProduct:
-                {
-                    //simple product doesn't have child products
-                    productsToProcess.Add(product1);
-                }
-                break;
+                    {
+                        //simple product doesn't have child products
+                        productsToProcess.Add(product1);
+                    }
+                    break;
                 case ProductType.GroupedProduct:
-                {
-                    //grouped products could have several child products
-                    var associatedProducts = await _productService.GetAssociatedProductsAsync(product1.Id, store.Id);
-                    productsToProcess.AddRange(associatedProducts);
-                }
-                break;
+                    {
+                        //grouped products could have several child products
+                        var associatedProducts = await _productService.GetAssociatedProductsAsync(product1.Id, store.Id);
+                        productsToProcess.AddRange(associatedProducts);
+                    }
+                    break;
                 default:
                     continue;
             }
@@ -337,21 +296,20 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
                 }
 
                 //link [link] - URL directly linking to your item's page on your website
-                var productUrl = GetUrlHelper().RouteUrl<Product>(new { SeName = await _urlRecordService.GetSeNameAsync(product) }, await GetHttpProtocolAsync());
+                var productUrl = $"{store.Url.TrimEnd('/')}{await _nopUrlHelper.RouteGenericUrlAsync(product, languageId: languageId)}";
                 writer.WriteElementString("link", productUrl);
 
                 //image link [image_link] - URL of an image of the item
                 //additional images [additional_image_link]
                 //up to 10 pictures
                 const int maximumPictures = 10;
-                var storeLocation = _webHelper.GetStoreLocation();
                 var pictures = await _pictureService.GetPicturesByProductIdAsync(product.Id, maximumPictures);
                 for (var i = 0; i < pictures.Count; i++)
                 {
                     var picture = pictures[i];
                     var imageUrl = await _pictureService.GetPictureUrlAsync(picture.Id,
                         googleShoppingSettings.ProductPictureSize,
-                        storeLocation: storeLocation);
+                        storeLocation: store.Url);
 
                     if (i == 0)
                     {
@@ -367,7 +325,7 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
                 if (!pictures.Any())
                 {
                     //no picture? submit a default one
-                    var imageUrl = await _pictureService.GetDefaultPictureUrlAsync(googleShoppingSettings.ProductPictureSize, storeLocation: storeLocation);
+                    var imageUrl = await _pictureService.GetDefaultPictureUrlAsync(googleShoppingSettings.ProductPictureSize, storeLocation: store.Url);
                     writer.WriteElementString("g", "image_link", googleBaseNamespace, imageUrl);
                 }
 
@@ -650,9 +608,11 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
     {
         ArgumentNullException.ThrowIfNull(store);
 
-        var filePath = _nopFileProvider.Combine(_webHostEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + _googleShoppingSettings.StaticFileName);
-        using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-        await GenerateFeedAsync(fs, store);
+        var pathToFile = string.Format(GoogleShoppingDefaults.PathToFeedFile, store.Id, _googleShoppingSettings.StaticFileName);
+        var localFilePath = _nopFileProvider.GetAbsolutePath(pathToFile);
+        await using var fileStream = _nopFileProvider.GetOrCreateFile(localFilePath);
+
+        await GenerateFeedAsync(fileStream, store);
     }
 
     #endregion

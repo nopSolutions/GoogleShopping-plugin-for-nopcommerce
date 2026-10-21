@@ -3,7 +3,7 @@ using Nop.Plugin.Feed.GoogleShopping.Domain;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Services;
 
-public partial class GoogleService : IGoogleService
+public partial class GoogleService
 {
     #region Fields
 
