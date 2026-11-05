@@ -573,7 +573,7 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
         var settings = new GoogleShoppingSettings
         {
             PricesConsiderPromotions = false,
-            ProductPictureSize = 125,
+            ProductPictureSize = 500,
             PassShippingInfoWeight = false,
             PassShippingInfoDimensions = false,
             StaticFileName = $"googleshopping_{CommonHelper.GenerateRandomDigitCode(10)}.xml",
